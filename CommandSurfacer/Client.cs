@@ -80,15 +80,15 @@ public class Client
         ServiceProvider = ServiceCollection.BuildServiceProvider();
     }
 
-    public Client Run(string[] args) => Run<Client>(string.Join(' ', args));
-    public T Run<T>(string[] args) => Run<T>(string.Join(' ', args));
-    public Client Run(string input) => Run<Client>(input);
-    public T Run<T>(string input)
+    public Client Run(string[] args, params object[] additionalParameters) => Run<Client>(string.Join(' ', args), additionalParameters);
+    public T Run<T>(string[] args, params object[] additionalParameters) => Run<T>(string.Join(' ', args), additionalParameters);
+    public Client Run(string input, params object[] additionalParameters) => Run<Client>(input, additionalParameters);
+    public T Run<T>(string input, params object[] additionalParameters)
     {
         FinalizeClientBuild();
 
         var commandRunner = ServiceProvider.GetRequiredService<ICommandRunner>();
-        var result = commandRunner.Run<T>(input);
+        var result = commandRunner.Run<T>(input, additionalParameters);
 
         if (typeof(T) == typeof(Client))
             return (T)(object)this;
@@ -96,15 +96,15 @@ public class Client
         return result;
     }
 
-    public async Task<object> RunAsync(string[] args) => await RunAsync<object>(string.Join(' ', args));
-    public async Task<T> RunAsync<T>(string[] args) => await RunAsync<T>(string.Join(' ', args));
-    public async Task<object> RunAsync(string input) => await RunAsync<object>(input);
-    public async Task<T> RunAsync<T>(string input)
+    public async Task<object> RunAsync(string[] args, params object[] additionalParameters) => await RunAsync<object>(string.Join(' ', args), additionalParameters);
+    public async Task<T> RunAsync<T>(string[] args, params object[] additionalParameters) => await RunAsync<T>(string.Join(' ', args), additionalParameters);
+    public async Task<object> RunAsync(string input, params object[] additionalParameters) => await RunAsync<object>(input, additionalParameters);
+    public async Task<T> RunAsync<T>(string input, params object[] additionalParameters)
     {
         FinalizeClientBuild();
 
         var commandRunner = ServiceProvider.GetRequiredService<ICommandRunner>();
-        var result = await commandRunner.RunAsync<T>(input);
+        var result = await commandRunner.RunAsync<T>(input, additionalParameters);
 
         return result;
     }

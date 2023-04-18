@@ -25,7 +25,7 @@ internal static class Program
 public class TestService
 {
     [Surface("test")]
-    public async Task<string> Test()
+    public async Task<string> Test(Stream stream)
     {
         throw new Exception();
         return await Task.FromException<string>(new Exception("Hello"));

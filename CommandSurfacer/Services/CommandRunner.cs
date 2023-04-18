@@ -16,11 +16,11 @@ public class CommandRunner : ICommandRunner
         _serviceProvider = serviceProvider;
     }
 
-    private object RunCommand(string input)
+    private object RunCommand(string input, params object[] additionalParameters)
     {
         var target = _argsParser.ParseCommandSurface(ref input);
 
-        var parameters = _argsParser.ParseMethodParameters(ref input, target.Method);
+        var parameters = _argsParser.ParseMethodParameters(ref input, target.Method, additionalParameters);
 
         var instance = _serviceProvider.GetRequiredService(target.Type);
         var result = target.Method.Invoke(instance, parameters);
@@ -28,9 +28,9 @@ public class CommandRunner : ICommandRunner
         return result;
     }
 
-    public T Run<T>(string input)
+    public T Run<T>(string input, params object[] additionalParameters)
     {
-        var result = RunCommand(input);
+        var result = RunCommand(input, additionalParameters);
 
         if (result is Task<T> typedTask)
         {
@@ -47,9 +47,9 @@ public class CommandRunner : ICommandRunner
         }
     }
 
-    public async Task<T> RunAsync<T>(string input)
+    public async Task<T> RunAsync<T>(string input, params object[] additionalParameters)
     {
-        var result = RunCommand(input);
+        var result = RunCommand(input, additionalParameters);
 
         if (result is Task<T> typedTask)
         {

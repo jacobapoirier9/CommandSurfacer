@@ -170,7 +170,7 @@ public class ArgsParser : IArgsParser
         }
     }
 
-    public object[] ParseMethodParameters(ref string input, MethodInfo method)
+    public object[] ParseMethodParameters(ref string input, MethodInfo method, params object[] additionalParameters)
     {
         var response = new List<object>();
 
@@ -179,6 +179,14 @@ public class ArgsParser : IArgsParser
         {
             var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>();
             var value = ParseTypedValue(ref input, parameter.Name, parameter.ParameterType, surfaceAttribute);
+
+            if (value is null)
+            {
+                var additionalParameter = additionalParameters.FirstOrDefault(ap => ap.GetType().IsAssignableTo(parameter.ParameterType));
+                if (additionalParameter is not null)
+                    value = additionalParameter;
+            }
+
             response.Add(value);
         }
 

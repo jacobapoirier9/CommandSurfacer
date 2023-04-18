@@ -12,5 +12,5 @@ public interface IArgsParser
 
     public object ParseTypedValue(ref string input, string targetName, Type targetType, SurfaceAttribute surfaceAttribute = null);
 
-    public object[] ParseMethodParameters(ref string input, MethodInfo method);
+    public object[] ParseMethodParameters(ref string input, MethodInfo method, params object[] additionalParameters);
 }
