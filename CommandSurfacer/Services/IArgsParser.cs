@@ -6,7 +6,7 @@ public interface IArgsParser
 {
     public CommandSurface ParseCommandSurface(ref string input);
 
-    public bool? ParsePresenceValue(ref string input, string targetName, bool? notFoundReturn = null);
+    public bool? ParsePresenceValue(ref string input, string targetName, Type targetType);
 
     public string ParseStringValue(ref string input, string targetName);
 

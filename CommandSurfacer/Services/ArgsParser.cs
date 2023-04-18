@@ -66,7 +66,7 @@ public class ArgsParser : IArgsParser
         return results.First();
     }
 
-    public bool? ParsePresenceValue(ref string input, string targetName, bool? notFoundReturn = null)
+    public bool? ParsePresenceValue(ref string input, string targetName, Type targetType)
     {
         var allowedTrueValues = new string[] { "true", "yes", "y", "1" };
         var allowedFalseValues = new string[] { "false", "no", "n", "0" };
@@ -92,7 +92,7 @@ public class ArgsParser : IArgsParser
                 return true; // Argument name was present, but the argument value was not present.
         }
 
-        return notFoundReturn; // Argument name was not present, and should return the default value.
+        return Activator.CreateInstance(targetType) as bool?; // Argument name was not present, and should return the default value.
     }
 
     public string ParseStringValue(ref string input, string targetName)
@@ -119,7 +119,7 @@ public class ArgsParser : IArgsParser
     {
         if (targetType == typeof(bool) || targetType == typeof(bool?))
         {
-            var presenceValue = ParsePresenceValue(ref input, targetName, Activator.CreateInstance(targetType) as bool?);
+            var presenceValue = ParsePresenceValue(ref input, targetName, targetType);
             return presenceValue;
         }
 
