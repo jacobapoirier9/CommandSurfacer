@@ -37,6 +37,7 @@ public class Client
             ServiceCollection.AddSingleton<IStringConverter, StringConverter>();
             ServiceCollection.AddSingleton<IArgsParser, ArgsParser>();
             ServiceCollection.AddSingleton<ICommandRunner, CommandRunner>();
+            ServiceCollection.AddSingleton<IShellService, ShellService>();
 
             _internalServicesRegistered = true;
         }
