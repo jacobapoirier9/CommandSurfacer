@@ -100,7 +100,7 @@ public class ArgsParser : IArgsParser
         var commandPrefixes = new string[] { "--", "/" };
         var commandPrefixesPattern = string.Join('|', commandPrefixes.OrderByDescending(s => s.Length).Select(s => Regex.Escape(s)));
 
-        var regex = new Regex($@"(?<Prefix>{commandPrefixesPattern})(?<ArgumentName>{targetName})(?<ArgumentNameTerminator>[\s:=]+)(?<ArgumentValue>[\w\s:\\.-{{}}]+|""[\w\s:\\.-{{}}]*""|'[\w\s:\\.-{{}}]*')", RegexOptions.IgnoreCase);
+        var regex = new Regex($@"(?<Prefix>{commandPrefixesPattern})(?<ArgumentName>{targetName})(?<ArgumentNameTerminator>[\s:=]+)(?<ArgumentValue>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}]*""|'[\w\s:\\.-{{}}]*')", RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
         if (match.Success)
@@ -188,6 +188,27 @@ public class ArgsParser : IArgsParser
             }
 
             response.Add(value);
+        }
+
+        var regex = new Regex(@"(?<ArgumentValue>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}]*""|'[\w\s:\\.-{{}}]*')");
+        var matches = regex.Matches(input).Cast<Match>().ToList();
+
+        var matchesIndex = 0;
+        for (var i = 0; i < response.Count; i++)
+        {
+            if (response[i] is not null)
+                continue;
+
+            var match = matches.ElementAtOrDefault(matchesIndex);
+            if (match is not null)
+            {
+                try 
+                { 
+                    response[i] = _stringConverter.Convert(parameters[i].ParameterType, match.Value.Trim('\'', '"', ' '));
+                    matchesIndex++;
+                }
+                catch { }
+            }
         }
 
         return response.ToArray();

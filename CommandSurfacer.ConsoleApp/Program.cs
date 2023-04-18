@@ -7,7 +7,7 @@ internal static class Program
     private static void Main(string[] args) => MainAsync(args).GetAwaiter().GetResult();
     private static async Task MainAsync(string[] args)
     {
-        args = new string[] { "c test" };
+        args = new string[] { "c test 'Jake'" };
 
         var client = Client.Create()
             .AddServices(services =>
@@ -25,7 +25,7 @@ internal static class Program
 public class TestService
 {
     [Surface("test")]
-    public async Task<string> Test(Stream stream)
+    public async Task<string> Test(Stream stream, string name)
     {
         throw new Exception();
         return await Task.FromException<string>(new Exception("Hello"));
