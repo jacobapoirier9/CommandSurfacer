@@ -66,7 +66,7 @@ public class ArgsParser : IArgsParser
         return results.First();
     }
 
-    public bool? ParsePresenceValue(ref string input, string targetName, Type targetType)
+    public bool? ParsePresenceValue(ref string input, string targetName, Type targetType, SurfaceAttribute surfaceAttribute = null)
     {
         var allowedTrueValues = new string[] { "true", "yes", "y", "1" };
         var allowedFalseValues = new string[] { "false", "no", "n", "0" };
@@ -95,7 +95,7 @@ public class ArgsParser : IArgsParser
         return Activator.CreateInstance(targetType) as bool?; // Argument name was not present, and should return the default value.
     }
 
-    public string ParseStringValue(ref string input, string targetName)
+    public string ParseStringValue(ref string input, string targetName, SurfaceAttribute surfaceAttribute = null)
     {
         var commandPrefixes = new string[] { "--", "/" };
         var commandPrefixesPattern = string.Join('|', commandPrefixes.OrderByDescending(s => s.Length).Select(s => Regex.Escape(s)));
@@ -115,11 +115,11 @@ public class ArgsParser : IArgsParser
         return null;
     }
 
-    public object ParseTypedValue(ref string input, string targetName, Type targetType)
+    public object ParseTypedValue(ref string input, string targetName, Type targetType, SurfaceAttribute surfaceAttribute = null)
     {
         if (targetType == typeof(bool) || targetType == typeof(bool?))
         {
-            var presenceValue = ParsePresenceValue(ref input, targetName, targetType);
+            var presenceValue = ParsePresenceValue(ref input, targetName, targetType, surfaceAttribute);
             return presenceValue;
         }
 
@@ -132,7 +132,6 @@ public class ArgsParser : IArgsParser
         }
         else
         {
-
             var injectedService = _serviceProvider.GetService(targetType);
             if (injectedService is not null)
                 return injectedService;
@@ -158,7 +157,7 @@ public class ArgsParser : IArgsParser
                 foreach (var property in properties)
                 {
                     var attribute = property.GetCustomAttribute<SurfaceAttribute>();
-                    var value = ParseTypedValue(ref input, attribute?.Name ?? property.Name, property.PropertyType);
+                    var value = ParseTypedValue(ref input, attribute?.Name ?? property.Name, property.PropertyType, attribute);
                     property.SetValue(instance, value);
                 }
 
@@ -178,7 +177,8 @@ public class ArgsParser : IArgsParser
         var parameters = method.GetParameters();
         foreach (var parameter in parameters)
         {
-            var value = ParseTypedValue(ref input, parameter.Name, parameter.ParameterType);
+            var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>();
+            var value = ParseTypedValue(ref input, parameter.Name, parameter.ParameterType, surfaceAttribute);
             response.Add(value);
         }
 
