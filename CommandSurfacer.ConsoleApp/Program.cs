@@ -7,7 +7,7 @@ internal static class Program
     private static void Main(string[] args) => MainAsync(args).GetAwaiter().GetResult();
     private static async Task MainAsync(string[] args)
     {
-        args = new string[] { "c test 'Jake'" };
+        args = new string[] { "c  'Anno' --file 'Jake'" };
 
         var client = Client.Create()
             .AddServices(services =>
@@ -25,11 +25,8 @@ internal static class Program
 public class TestService
 {
     [Surface("test")]
-    public async Task<string> Test(Stream stream, string name)
+    public async Task Test(FileInfo file)
     {
-        throw new Exception();
-        return await Task.FromException<string>(new Exception("Hello"));
-        return await Task.FromResult("test");
     }
 }
 

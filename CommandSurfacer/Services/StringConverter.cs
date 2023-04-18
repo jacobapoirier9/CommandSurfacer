@@ -70,6 +70,25 @@ public class StringConverter : IStringConverter
         else if (targetType == typeof(DateTime?))
             converted = DateTime.TryParse(input, out var outValue) ? outValue : null;
 
+        if (targetType == typeof(FileInfo))
+        {
+            var filePath = Convert<string>(input);
+            if (filePath is not null)
+            {
+                var fileInfo = new FileInfo(filePath);
+                return fileInfo;
+            }
+        }
+        else if (targetType == typeof(DirectoryInfo))
+        {
+            var directoryPath = Convert<string>(input);
+            if (directoryPath is not null)
+            {
+                var directoryInfo = new DirectoryInfo(directoryPath);
+                return directoryInfo;
+            }
+        }
+
         if (converted == default)
             throw new ApplicationException("Converting string to " + targetType.Name + " is not supported.");
 

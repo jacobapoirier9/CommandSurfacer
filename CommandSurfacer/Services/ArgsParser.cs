@@ -136,19 +136,6 @@ public class ArgsParser : IArgsParser
             if (injectedService is not null)
                 return injectedService;
 
-            if (targetType == typeof(FileInfo))
-            {
-                var filePath = _stringConverter.Convert<string>(input);
-                var fileInfo = new FileInfo(filePath);
-                return fileInfo;
-            }
-            else if (targetType == typeof(DirectoryInfo))
-            {
-                var directoryPath = _stringConverter.Convert<string>(input);
-                var directoryInfo = new DirectoryInfo(directoryPath);
-                return directoryInfo;
-            }
-
             try
             {
                 var instance = Activator.CreateInstance(targetType);
