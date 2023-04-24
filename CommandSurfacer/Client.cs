@@ -76,8 +76,8 @@ public class Client
 
     private void FinalizeClientBuild()
     {
-        BuildCommandSurfaces();
         AddInternalServices();
+        BuildCommandSurfaces();
 
         _serviceProvider = _serviceCollection.BuildServiceProvider();
     }
