@@ -1,5 +1,6 @@
 ﻿using CommandSurfacer.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Reflection;
 
 namespace CommandSurfacer;
@@ -49,11 +50,13 @@ public class Client
 
         foreach (var service in _serviceCollection)
         {
-            var methods = service.ImplementationType.GetMethods()
-                .Where(m => m.IsPublic && m.DeclaringType == service.ImplementationType && !m.IsSpecialName)
+            var implementationType = service.ImplementationType ?? service.ImplementationInstance.GetType();
+
+            var methods = implementationType.GetMethods()
+                .Where(m => m.IsPublic && m.DeclaringType == implementationType && !m.IsSpecialName)
                 .ToList();
 
-            var typeAttribute = service.ImplementationType.GetCustomAttribute<SurfaceAttribute>();
+            var typeAttribute = implementationType.GetCustomAttribute<SurfaceAttribute>();
             foreach (var method in methods)
             {
                 var methodAttribute = method.GetCustomAttribute<SurfaceAttribute>();

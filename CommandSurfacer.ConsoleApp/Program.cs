@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using CommandSurfacer.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CommandSurfacer.ConsoleApp;
 
@@ -13,6 +14,7 @@ internal static class Program
             .AddServices(services =>
             {
                 services.AddSingleton<TestService>();
+                services.AddSingleton<IInputProvider>(new MemoryInputProvider { Responses = new List<object> { "Test" } });
             });
 
         client.Run(args);
@@ -25,8 +27,8 @@ internal static class Program
 public class TestService
 {
     [Surface("test")]
-    public async Task Test(FileInfo file)
+    public async Task Test(IInputProvider inputProvider)
     {
+        var first = inputProvider.GetResponse("");
     }
 }
-
