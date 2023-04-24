@@ -6,10 +6,10 @@ namespace CommandSurfacer;
 
 public class Client
 {
-    protected readonly List<CommandSurface> CommandSurfaces = new List<CommandSurface>();
-    protected readonly IServiceCollection ServiceCollection = new ServiceCollection();
+    private readonly List<CommandSurface> _commandSurfaces = new List<CommandSurface>();
+    private readonly IServiceCollection _serviceCollection = new ServiceCollection();
 
-    protected IServiceProvider ServiceProvider;
+    private IServiceProvider _serviceProvider;
 
     private bool _internalServicesRegistered = false;
 
@@ -22,7 +22,7 @@ public class Client
 
     public Client AddServices(Action<IServiceCollection> addServices)
     {
-        addServices(ServiceCollection);
+        addServices(_serviceCollection);
         return this;
     }
 
@@ -30,14 +30,14 @@ public class Client
     {
         if (_internalServicesRegistered == false)
         {
-            ServiceCollection.AddSingleton(this);
-            ServiceCollection.AddSingleton(ServiceCollection);
-            ServiceCollection.AddSingleton(CommandSurfaces);
+            _serviceCollection.AddSingleton(this);
+            _serviceCollection.AddSingleton(_serviceCollection);
+            _serviceCollection.AddSingleton(_commandSurfaces);
 
-            ServiceCollection.AddSingleton<IStringConverter, StringConverter>();
-            ServiceCollection.AddSingleton<IArgsParser, ArgsParser>();
-            ServiceCollection.AddSingleton<ICommandRunner, CommandRunner>();
-            ServiceCollection.AddSingleton<IShellService, ShellService>();
+            _serviceCollection.AddSingleton<IStringConverter, StringConverter>();
+            _serviceCollection.AddSingleton<IArgsParser, ArgsParser>();
+            _serviceCollection.AddSingleton<ICommandRunner, CommandRunner>();
+            _serviceCollection.AddSingleton<IShellService, ShellService>();
 
             _internalServicesRegistered = true;
         }
@@ -45,9 +45,9 @@ public class Client
 
     private void BuildCommandSurfaces()
     {
-        CommandSurfaces.Clear();
+        _commandSurfaces.Clear();
 
-        foreach (var service in ServiceCollection)
+        foreach (var service in _serviceCollection)
         {
             var methods = service.ImplementationType.GetMethods()
                 .Where(m => m.IsPublic && m.DeclaringType == service.ImplementationType && !m.IsSpecialName)
@@ -59,7 +59,7 @@ public class Client
                 var methodAttribute = method.GetCustomAttribute<SurfaceAttribute>();
                 if (typeAttribute is not null || methodAttribute is not null) // We only want to add a command surface if it has been explicitly defined as a surface.
                 {
-                    CommandSurfaces.Add(new CommandSurface
+                    _commandSurfaces.Add(new CommandSurface
                     {
                         Type = service.ServiceType,
                         TypeAttribute = typeAttribute,
@@ -76,7 +76,7 @@ public class Client
         BuildCommandSurfaces();
         AddInternalServices();
 
-        ServiceProvider = ServiceCollection.BuildServiceProvider();
+        _serviceProvider = _serviceCollection.BuildServiceProvider();
     }
 
     public Client Run(string[] args, params object[] additionalParameters) => Run<Client>(string.Join(' ', args), additionalParameters);
@@ -86,7 +86,7 @@ public class Client
     {
         FinalizeClientBuild();
 
-        var commandRunner = ServiceProvider.GetRequiredService<ICommandRunner>();
+        var commandRunner = _serviceProvider.GetRequiredService<ICommandRunner>();
         var result = commandRunner.Run<T>(input, additionalParameters);
 
         if (typeof(T) == typeof(Client))
@@ -102,7 +102,7 @@ public class Client
     {
         FinalizeClientBuild();
 
-        var commandRunner = ServiceProvider.GetRequiredService<ICommandRunner>();
+        var commandRunner = _serviceProvider.GetRequiredService<ICommandRunner>();
         var result = await commandRunner.RunAsync<T>(input, additionalParameters);
 
         return result;
