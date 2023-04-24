@@ -1,6 +1,6 @@
 ﻿namespace CommandSurfacer.Services;
 
-public class MemoryInputProvider : IInputProvider
+public class MemoryResponseProvider : IResponseProvider
 {
     private readonly IEnumerator<object> _enumerator;
     public required IEnumerable<object> Responses { init { _enumerator = value.GetEnumerator(); } }

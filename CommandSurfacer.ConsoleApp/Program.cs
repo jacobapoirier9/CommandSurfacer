@@ -12,9 +12,10 @@ internal static class Program
 
         var client = Client.Create()
             .AddServices(services =>
+
             {
                 services.AddSingleton<TestService>();
-                services.AddSingleton<IInputProvider>(new MemoryInputProvider { Responses = new List<object> { "Test" } });
+                services.AddSingleton<IResponseProvider>(new MemoryResponseProvider { Responses = new List<object> { "Test" } });
             });
 
         client.Run(args);
@@ -27,8 +28,8 @@ internal static class Program
 public class TestService
 {
     [Surface("test")]
-    public async Task Test(IInputProvider inputProvider)
+    public async Task Test(IResponseProvider responseProvider)
     {
-        var first = inputProvider.GetResponse("");
+        var first = responseProvider.GetResponse("");
     }
 }

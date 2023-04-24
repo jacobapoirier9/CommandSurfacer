@@ -1,6 +1,6 @@
 ﻿namespace CommandSurfacer.Services;
 
-public interface IInputProvider
+public interface IResponseProvider
 {
     public T GetResponse<T>(string prompt);
     public object GetResponse(string prompt, Type targetType);

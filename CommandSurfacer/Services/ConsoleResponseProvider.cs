@@ -1,11 +1,9 @@
-﻿using System.ComponentModel;
+﻿namespace CommandSurfacer.Services;
 
-namespace CommandSurfacer.Services;
-
-public class ConsoleInputProvider : IInputProvider
+public class ConsoleResponseProvider : IResponseProvider
 {
     private readonly IStringConverter _stringConverter;
-    public ConsoleInputProvider(IStringConverter stringConverter)
+    public ConsoleResponseProvider(IStringConverter stringConverter)
     {
         _stringConverter = stringConverter;
     }
