@@ -47,7 +47,6 @@ public class Client
     {
         CommandSurfaces.Clear();
 
-        // TODO: Should ImplementationType or ServiceType be used for command context registration?
         foreach (var service in ServiceCollection)
         {
             var methods = service.ImplementationType.GetMethods()
