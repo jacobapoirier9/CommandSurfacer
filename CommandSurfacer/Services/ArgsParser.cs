@@ -97,7 +97,7 @@ public class ArgsParser : IArgsParser
 
     public string ParseStringValue(ref string input, string targetName, SurfaceAttribute surfaceAttribute = null)
     {
-        var commandPrefixes = new string[] { "--", "/" };
+        var commandPrefixes = new string[] { "--", "-", "/" };
         var commandPrefixesPattern = string.Join('|', commandPrefixes.OrderByDescending(s => s.Length).Select(s => Regex.Escape(s)));
 
         var regex = new Regex($@"(?<Prefix>{commandPrefixesPattern})(?<ArgumentName>{targetName})(?<ArgumentNameTerminator>[\s:=]+)(?<ArgumentValue>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}]*""|'[\w\s:\\.-{{}}]*')", RegexOptions.IgnoreCase);
