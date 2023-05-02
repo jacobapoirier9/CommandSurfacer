@@ -1,0 +1,25 @@
+name: Publish Nuget Package
+
+on:
+  push:
+    branches: [ master ]
+    
+jobs:
+  Job:
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install .NET 7
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 7.0.101
+      - name: Dotnet Restore
+        run: dotnet restore
+      - name: Dotnet Build
+        run: dotnet build --configuration Release --no-restore -o ./bin
+      - name: Dotnet Test
+        run: dotnet test -o ./bin --no-build --no-restore
+      - name: Dotnet Publish
+        working-directory: ./bin
+        run: dotnet nuget push *.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://nuget.pkg.github.com/jacobapoirier9/index.json --no-service-endpoint --skip-duplicate
