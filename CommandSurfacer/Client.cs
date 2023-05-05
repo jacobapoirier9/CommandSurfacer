@@ -27,6 +27,28 @@ public class Client
         return this;
     }
 
+    public Client AddInteractiveConsole(Action<InteractiveConsoleOptions> configure = null)
+    {
+        _serviceCollection.TryAddSingleton<IResponseProvider, ConsoleResponseProvider>();
+        _serviceCollection.TryAddSingleton<IInteractiveConsole, InteractiveConsole>();
+
+        var options = new InteractiveConsoleOptions
+        {
+            Banner = null,
+            Prompt = " >> "
+        };
+
+        if (configure is not null)
+            configure(options);
+
+        if (options.PromptFunc is not null)
+            options.Prompt = null;
+
+        _serviceCollection.TryAddSingleton(options);
+
+        return this;
+    }
+
     private void AddInternalServices()
     {
         if (_internalServicesRegistered == false)
@@ -89,6 +111,16 @@ public class Client
     {
         FinalizeClientBuild();
 
+        if (string.IsNullOrEmpty(input))
+        {
+            var interactiveConsoleOptions = _serviceProvider.GetService<IInteractiveConsole>();
+            if (interactiveConsoleOptions is not null)
+            {
+                interactiveConsoleOptions.EnterShell();
+                return default;
+            }
+        }
+
         var commandRunner = _serviceProvider.GetRequiredService<ICommandRunner>();
         var result = commandRunner.Run<T>(input, additionalParameters);
 
@@ -104,6 +136,16 @@ public class Client
     public async Task<T> RunAsync<T>(string input, params object[] additionalParameters)
     {
         FinalizeClientBuild();
+
+        if (string.IsNullOrEmpty(input))
+        {
+            var interactiveConsoleOptions = _serviceProvider.GetService<IInteractiveConsole>();
+            if (interactiveConsoleOptions is not null)
+            {
+                await interactiveConsoleOptions.EnterShellAsync();
+                return default;
+            }
+        }
 
         var commandRunner = _serviceProvider.GetRequiredService<ICommandRunner>();
         var result = await commandRunner.RunAsync<T>(input, additionalParameters);

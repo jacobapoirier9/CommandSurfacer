@@ -1,5 +1,6 @@
 ﻿using CommandSurfacer.Services;
 using Microsoft.Extensions.DependencyInjection;
+using System.Runtime.CompilerServices;
 
 namespace CommandSurfacer.ConsoleApp;
 
@@ -8,14 +9,16 @@ internal static class Program
     private static void Main(string[] args) => MainAsync(args).GetAwaiter().GetResult();
     private static async Task MainAsync(string[] args)
     {
-        args = new string[] { "c  'Anno' --file 'Jake'" };
+        args = new string[] { };
 
         var client = Client.Create()
+            .AddInteractiveConsole(options =>
+            {
+                options.Banner = "Welcome to Jake's custom CLI";
+            })
             .AddServices(services =>
-
             {
                 services.AddSingleton<TestService>();
-                services.AddSingleton<IResponseProvider>(new MemoryResponseProvider { Responses = new List<object> { "Test" } });
             });
 
         client.Run(args);
@@ -24,12 +27,11 @@ internal static class Program
     }
 }
 
-[Surface("c")]
+
 public class TestService
 {
     [Surface("test")]
-    public async Task Test(IResponseProvider responseProvider)
+    public async Task Test()
     {
-        var first = responseProvider.GetResponse("");
     }
 }
