@@ -1,4 +1,5 @@
 ﻿using CommandSurfacer.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CommandSurfacer;
 
@@ -11,10 +12,10 @@ public class InteractiveConsole : IInteractiveConsole
 
     private bool _continue;
 
-    public InteractiveConsole(ICommandRunner commandRunner, InteractiveConsoleOptions options)
+    public InteractiveConsole(ICommandRunner commandRunner, IServiceProvider serviceProvider)
     {
         _commandRunner = commandRunner;
-        _options = options;
+        _options = serviceProvider.GetService<InteractiveConsoleOptions>();
 
         _continue = true;
     }
