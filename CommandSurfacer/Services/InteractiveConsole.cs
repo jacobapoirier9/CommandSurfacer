@@ -40,9 +40,10 @@ public class InteractiveConsole : IInteractiveConsole
     }
 
     [Surface("exit")]
-    public async Task ExitShell(int exitCode = 0)
+    public async Task ExitShell()
     {
         _continue = false;
-        //Environment.Exit(exitCode);
+
+        await Task.CompletedTask;
     }
 }
