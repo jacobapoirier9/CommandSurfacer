@@ -66,7 +66,7 @@ public class ArgsParser : IArgsParser
         return results.First();
     }
 
-    public bool? ParsePresenceValue(ref string input, string targetName, Type targetType, SurfaceAttribute surfaceAttribute = null)
+    public bool? ParsePresenceValue(ref string input, SurfaceAttribute surfaceAttribute, Type targetType)
     {
         var allowedTrueValues = new string[] { "true", "yes", "y", "1" };
         var allowedFalseValues = new string[] { "false", "no", "n", "0" };
@@ -77,7 +77,7 @@ public class ArgsParser : IArgsParser
         var commandPrefixes = new string[] { "--", "/" };
         var commandPrefixesPattern = Regex.Escape(string.Join('|', commandPrefixes.OrderByDescending(s => s.Length)));
 
-        var regex = new Regex($@"(?<Prefix>{commandPrefixesPattern})(?<ArgumentName>{targetName})(?<ArgumentNameTerminator>[\s:=]+(?<ArgumentValue>{string.Join('|', allowedBooleanValues)})?|$)", RegexOptions.IgnoreCase);
+        var regex = new Regex($@"(?<Prefix>{commandPrefixesPattern})(?<ArgumentName>{surfaceAttribute.Name})(?<ArgumentNameTerminator>[\s:=]+(?<ArgumentValue>{string.Join('|', allowedBooleanValues)})?|$)", RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
         if (match.Success)
@@ -95,12 +95,12 @@ public class ArgsParser : IArgsParser
         return Activator.CreateInstance(targetType) as bool?; // Argument name was not present, and should return the default value.
     }
 
-    public string ParseStringValue(ref string input, string targetName, SurfaceAttribute surfaceAttribute = null)
+    public string ParseStringValue(ref string input, SurfaceAttribute surfaceAttribute)
     {
         var commandPrefixes = new string[] { "--", "-", "/" };
         var commandPrefixesPattern = string.Join('|', commandPrefixes.OrderByDescending(s => s.Length).Select(s => Regex.Escape(s)));
 
-        var regex = new Regex($@"(?<Prefix>{commandPrefixesPattern})(?<ArgumentName>{targetName})(?<ArgumentNameTerminator>[\s:=]+)(?<ArgumentValue>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}]*""|'[\w\s:\\.-{{}}]*')", RegexOptions.IgnoreCase);
+        var regex = new Regex($@"(?<Prefix>{commandPrefixesPattern})(?<ArgumentName>{surfaceAttribute.Name})(?<ArgumentNameTerminator>[\s:=]+)(?<ArgumentValue>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}]*""|'[\w\s:\\.-{{}}]*')", RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
         if (match.Success)
@@ -115,15 +115,15 @@ public class ArgsParser : IArgsParser
         return null;
     }
 
-    public object ParseTypedValue(ref string input, string targetName, Type targetType, SurfaceAttribute surfaceAttribute = null)
+    public object ParseTypedValue(ref string input, SurfaceAttribute surfaceAttribute, Type targetType)
     {
         if (targetType == typeof(bool) || targetType == typeof(bool?))
         {
-            var presenceValue = ParsePresenceValue(ref input, targetName, targetType, surfaceAttribute);
+            var presenceValue = ParsePresenceValue(ref input, surfaceAttribute, targetType);
             return presenceValue;
         }
 
-        var stringValue = ParseStringValue(ref input, targetName);
+        var stringValue = ParseStringValue(ref input, surfaceAttribute);
 
         if (stringValue is not null)
         {
@@ -139,12 +139,12 @@ public class ArgsParser : IArgsParser
             try
             {
                 var instance = Activator.CreateInstance(targetType);
-
+                
                 var properties = targetType.GetProperties();
                 foreach (var property in properties)
                 {
-                    var attribute = property.GetCustomAttribute<SurfaceAttribute>();
-                    var value = ParseTypedValue(ref input, attribute?.Name ?? property.Name, property.PropertyType, attribute);
+                    var attribute = property.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(property.Name);
+                    var value = ParseTypedValue(ref input, surfaceAttribute, property.PropertyType);
                     property.SetValue(instance, value);
                 }
 
@@ -157,6 +157,21 @@ public class ArgsParser : IArgsParser
         }
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     public object[] ParseMethodParameters(ref string input, MethodInfo method, params object[] additionalParameters)
     {
         var response = new List<object>();
@@ -164,8 +179,8 @@ public class ArgsParser : IArgsParser
         var parameters = method.GetParameters();
         foreach (var parameter in parameters)
         {
-            var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>();
-            var value = ParseTypedValue(ref input, parameter.Name, parameter.ParameterType, surfaceAttribute);
+            var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(parameter.Name);
+            var value = ParseTypedValue(ref input, surfaceAttribute, parameter.ParameterType);
 
             if (value is null)
             {
