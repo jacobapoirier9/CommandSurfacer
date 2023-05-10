@@ -9,7 +9,7 @@ public class ArgsParser : IArgsParser
     private readonly IStringConverter _stringConverter;
     private readonly IServiceProvider _serviceProvider;
 
-    private Regex _commandSurfaceRegex;
+    private readonly Regex _commandSurfaceRegex;
 
     public ArgsParser(List<CommandSurface> commandSurfaces, IStringConverter stringConverter, IServiceProvider serviceProvider)
     {
@@ -17,12 +17,6 @@ public class ArgsParser : IArgsParser
         _stringConverter = stringConverter;
         _serviceProvider = serviceProvider;
 
-        BuildCommandSurfaceRegularExpression();
-    }
-
-
-    private void BuildCommandSurfaceRegularExpression()
-    {
         var optionalTypeSurfaceIdentifiers = _commandSurfaces.Select(cs => cs.TypeAttribute?.Name)
             .Where(cs => cs is not null)
             .OrderByDescending(cs => cs.Length)
