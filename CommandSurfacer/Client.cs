@@ -60,7 +60,7 @@ public class Client
             _serviceCollection.AddSingleton<IStringConverter, StringConverter>();
             _serviceCollection.AddSingleton<IArgsParser, ArgsParser>();
             _serviceCollection.AddSingleton<ICommandRunner, CommandRunner>();
-            _serviceCollection.AddSingleton<IShellService, ShellService>();
+            _serviceCollection.AddSingleton<IProcessService, ProcessService>();
 
             _internalServicesRegistered = true;
         }

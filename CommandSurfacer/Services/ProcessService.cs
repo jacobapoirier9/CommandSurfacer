@@ -3,7 +3,7 @@ using System.Text;
 
 namespace CommandSurfacer.Services;
 
-public class ShellService : IShellService
+public class ProcessService : IProcessService
 {
     public string Run(string exeFileName, string arguments)
     {
@@ -41,5 +41,10 @@ public class ShellService : IShellService
             var error = errorBuilder.ToString();
             throw new ApplicationException($"Process finished with exit code {process.ExitCode}: {error}");
         }
+    }
+
+    public async Task RunAsync(string exeFileName, string arguments)
+    {
+        await new Task(() => Run(exeFileName, arguments));
     }
 }

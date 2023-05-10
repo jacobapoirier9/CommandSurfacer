@@ -1,4 +1,5 @@
 ﻿using CommandSurfacer.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CommandSurfacer;
 
@@ -11,10 +12,10 @@ public class InteractiveConsole : IInteractiveConsole
 
     private bool _continue;
 
-    public InteractiveConsole(ICommandRunner commandRunner, InteractiveConsoleOptions options)
+    public InteractiveConsole(ICommandRunner commandRunner, IServiceProvider serviceProvider)
     {
         _commandRunner = commandRunner;
-        _options = options;
+        _options = serviceProvider.GetService<InteractiveConsoleOptions>();
 
         _continue = true;
     }
@@ -35,14 +36,25 @@ public class InteractiveConsole : IInteractiveConsole
 
             var line = Console.ReadLine();
 
-            await _commandRunner.RunAsync(line);
+            try
+            {
+                await _commandRunner.RunAsync(line);
+            }
+            catch (Exception ex)
+            {
+                if (_options.OnError is not null)
+                    _options.OnError(this, ex);
+                else
+                    Console.WriteLine(ex);
+            }
         }
     }
 
     [Surface("exit")]
-    public async Task ExitShell(int exitCode = 0)
+    public async Task ExitShell()
     {
         _continue = false;
-        //Environment.Exit(exitCode);
+
+        await Task.CompletedTask;
     }
 }
