@@ -36,7 +36,17 @@ public class InteractiveConsole : IInteractiveConsole
 
             var line = Console.ReadLine();
 
-            await _commandRunner.RunAsync(line);
+            try
+            {
+                await _commandRunner.RunAsync(line);
+            }
+            catch (Exception ex)
+            {
+                if (_options.OnError is not null)
+                    _options.OnError(this, ex);
+                else
+                    Console.WriteLine(ex);
+            }
         }
     }
 

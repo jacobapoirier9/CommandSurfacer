@@ -157,21 +157,6 @@ public class ArgsParser : IArgsParser
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     public object[] ParseMethodParameters(ref string input, MethodInfo method, params object[] additionalParameters)
     {
         var response = new List<object>();
