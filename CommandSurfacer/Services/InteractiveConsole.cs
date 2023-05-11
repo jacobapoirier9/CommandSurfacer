@@ -1,7 +1,6 @@
-﻿using CommandSurfacer.Services;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace CommandSurfacer;
+namespace CommandSurfacer.Services;
 
 public class InteractiveConsole : IInteractiveConsole
 {

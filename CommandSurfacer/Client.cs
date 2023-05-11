@@ -49,6 +49,13 @@ public class Client
         return this;
     }
 
+    public Client AddConsoleHelpMenu()
+    {
+        _serviceCollection.AddSingleton<IConsoleHelpMenu, ConsoleHelpMenu>();
+
+        return this;
+    }
+
     private void AddInternalServices()
     {
         if (_internalServicesRegistered == false)
