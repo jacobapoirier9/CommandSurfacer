@@ -161,6 +161,14 @@ public class ArgsParser : IArgsParser
             var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(parameter.Name);
             var value = ParseTypedValue(ref input, surfaceAttribute, parameter.ParameterType);
 
+            // If ParseTypedValue returns the default value, we do not want to add it to response.
+            // This will allow anonymous parameters to be inserted more accurately.
+            if (parameter.ParameterType.IsAssignableTo(typeof(IConvertible)) &&
+                object.Equals(value, Activator.CreateInstance(parameter.ParameterType)))
+            {
+                value = null;
+            }
+
             if (value is null)
             {
                 var additionalParameter = additionalParameters.FirstOrDefault(ap => ap.GetType().IsAssignableTo(parameter.ParameterType));
