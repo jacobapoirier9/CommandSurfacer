@@ -21,8 +21,8 @@ public class InteractiveConsole : IInteractiveConsole
     }
 
     [Surface(EnterInteractiveConsoleCommand)]
-    public void EnterShell() => EnterShellAsync().GetAwaiter().GetResult();
-    public async Task EnterShellAsync()
+    public void BeginInteractiveMode() => BeginInteractiveModeAsync().GetAwaiter().GetResult();
+    public async Task BeginInteractiveModeAsync()
     {
         if (_options.Banner is not null)
             Console.WriteLine(_options.Banner);
@@ -51,10 +51,8 @@ public class InteractiveConsole : IInteractiveConsole
     }
 
     [Surface("exit")]
-    public async Task ExitShell()
+    public void EndInteractiveMode()
     {
         _continue = false;
-
-        await Task.CompletedTask;
     }
 }
