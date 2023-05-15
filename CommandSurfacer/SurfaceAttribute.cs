@@ -8,4 +8,6 @@ public class SurfaceAttribute : Attribute
     {
         Name = name;
     }
+
+    public string HelpText { get; init; }
 }

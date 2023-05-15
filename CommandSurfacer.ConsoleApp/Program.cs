@@ -10,13 +10,14 @@ internal static class Program
     private static void Main(string[] args) => MainAsync(args).GetAwaiter().GetResult();
     private static async Task MainAsync(string[] args)
     {
-        args = new string[] { "test" };
+        args = new string[] { "help" };
 
         var client = Client.Create()
             .AddInteractiveConsole(options =>
             {
                 options.Banner = "Welcome to Jake's custom CLI";
             })
+            .AddConsoleHelpMenu()
             .AddServices(services =>
             {
                 services.AddSingleton<TestService>();
