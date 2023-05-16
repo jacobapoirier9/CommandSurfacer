@@ -68,8 +68,8 @@ public class ArgsParser : IArgsParser
         var allowedBooleanValues = allowedTrueValues.Concat(allowedFalseValues);
         var allowedBooleanValuesPattern = string.Join('|', allowedBooleanValues.OrderByDescending(s => s.Length));
 
-        var commandPrefixes = new string[] { "--", "/" };
-        var commandPrefixesPattern = Regex.Escape(string.Join('|', commandPrefixes.OrderByDescending(s => s.Length)));
+        var commandPrefixes = new string[] { "--", "-", "/" };
+        var commandPrefixesPattern = string.Join('|', commandPrefixes.OrderByDescending(s => s.Length).Select(s => Regex.Escape(s)));
 
         var regex = new Regex($@"(?<Prefix>{commandPrefixesPattern})(?<ArgumentName>{surfaceAttribute.Name})(?<ArgumentNameTerminator>[\s:=]+(?<ArgumentValue>{string.Join('|', allowedBooleanValues)})?|$)", RegexOptions.IgnoreCase);
         var match = regex.Match(input);

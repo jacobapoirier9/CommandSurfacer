@@ -10,7 +10,7 @@ internal static class Program
     private static void Main(string[] args) => MainAsync(args).GetAwaiter().GetResult();
     private static async Task MainAsync(string[] args)
     {
-        args = new string[] { "help" };
+        args = new string[] { "test --test" };
 
         var client = Client.Create()
             .AddInteractiveConsole(options =>
@@ -33,7 +33,7 @@ internal static class Program
 public class TestService
 {
     [Surface("test")]
-    public async Task Test(IProcessService processService, int test)
+    public async Task Test(IProcessService processService, bool test)
     {
         var currentProcess = Process.GetCurrentProcess();
         var output = processService.Run("powershell.exe", $"-Command {{ Get-CimInstance Win32_Process -Filter \"ProcessId = '{currentProcess.Id}'\" | select ParentProcessId }}");
