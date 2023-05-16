@@ -163,10 +163,14 @@ public class ArgsParser : IArgsParser
 
             // If ParseTypedValue returns the default value, we do not want to add it to response.
             // This will allow anonymous parameters to be inserted more accurately.
-            if (parameter.ParameterType.IsAssignableTo(typeof(IConvertible)) &&
-                object.Equals(value, Activator.CreateInstance(parameter.ParameterType)))
+            if (parameter.ParameterType.IsAssignableTo(typeof(IConvertible)))
             {
-                value = null;
+                try
+                {
+                    if (object.Equals(value, Activator.CreateInstance(parameter.ParameterType)))
+                        value = null;
+                }
+                catch { } 
             }
 
             if (value is null)
