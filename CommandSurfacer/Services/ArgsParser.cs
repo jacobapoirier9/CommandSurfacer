@@ -68,8 +68,8 @@ public class ArgsParser : IArgsParser
         var allowedBooleanValues = allowedTrueValues.Concat(allowedFalseValues);
         var allowedBooleanValuesPattern = string.Join('|', allowedBooleanValues.OrderByDescending(s => s.Length));
 
-        var commandPrefixes = new string[] { "--", "/" };
-        var commandPrefixesPattern = Regex.Escape(string.Join('|', commandPrefixes.OrderByDescending(s => s.Length)));
+        var commandPrefixes = new string[] { "--", "-", "/" };
+        var commandPrefixesPattern = string.Join('|', commandPrefixes.OrderByDescending(s => s.Length).Select(s => Regex.Escape(s)));
 
         var regex = new Regex($@"(?<Prefix>{commandPrefixesPattern})(?<ArgumentName>{surfaceAttribute.Name})(?<ArgumentNameTerminator>[\s:=]+(?<ArgumentValue>{string.Join('|', allowedBooleanValues)})?|$)", RegexOptions.IgnoreCase);
         var match = regex.Match(input);
@@ -160,6 +160,14 @@ public class ArgsParser : IArgsParser
         {
             var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(parameter.Name);
             var value = ParseTypedValue(ref input, surfaceAttribute, parameter.ParameterType);
+
+            // If ParseTypedValue returns the default value, we do not want to add it to response.
+            // This will allow anonymous parameters to be inserted more accurately.
+            if (parameter.ParameterType.IsAssignableTo(typeof(IConvertible)) &&
+                object.Equals(value, Activator.CreateInstance(parameter.ParameterType)))
+            {
+                value = null;
+            }
 
             if (value is null)
             {

@@ -1,8 +1,10 @@
-﻿namespace CommandSurfacer;
+﻿namespace CommandSurfacer.Services;
 
 public interface IInteractiveConsole
 {
-    public void EnterShell();
+    public void BeginInteractiveMode();
 
-    public Task EnterShellAsync();
+    public Task BeginInteractiveModeAsync();
+
+    public void EndInteractiveMode();
 }

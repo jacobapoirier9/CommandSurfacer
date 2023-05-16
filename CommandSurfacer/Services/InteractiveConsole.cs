@@ -1,7 +1,6 @@
-﻿using CommandSurfacer.Services;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace CommandSurfacer;
+namespace CommandSurfacer.Services;
 
 public class InteractiveConsole : IInteractiveConsole
 {
@@ -21,8 +20,8 @@ public class InteractiveConsole : IInteractiveConsole
     }
 
     [Surface(EnterInteractiveConsoleCommand)]
-    public void EnterShell() => EnterShellAsync().GetAwaiter().GetResult();
-    public async Task EnterShellAsync()
+    public void BeginInteractiveMode() => BeginInteractiveModeAsync().GetAwaiter().GetResult();
+    public async Task BeginInteractiveModeAsync()
     {
         if (_options.Banner is not null)
             Console.WriteLine(_options.Banner);
@@ -51,10 +50,8 @@ public class InteractiveConsole : IInteractiveConsole
     }
 
     [Surface("exit")]
-    public async Task ExitShell()
+    public void EndInteractiveMode()
     {
         _continue = false;
-
-        await Task.CompletedTask;
     }
 }

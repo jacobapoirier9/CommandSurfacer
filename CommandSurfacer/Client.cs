@@ -49,6 +49,13 @@ public class Client
         return this;
     }
 
+    public Client AddConsoleHelpMenu()
+    {
+        _serviceCollection.AddSingleton<IConsoleHelpMenu, ConsoleHelpMenu>();
+
+        return this;
+    }
+
     private void AddInternalServices()
     {
         if (_internalServicesRegistered == false)
@@ -116,7 +123,7 @@ public class Client
             var interactiveConsoleOptions = _serviceProvider.GetService<IInteractiveConsole>();
             if (interactiveConsoleOptions is not null)
             {
-                interactiveConsoleOptions.EnterShell();
+                interactiveConsoleOptions.BeginInteractiveMode();
                 return default;
             }
         }
@@ -142,7 +149,7 @@ public class Client
             var interactiveConsoleOptions = _serviceProvider.GetService<IInteractiveConsole>();
             if (interactiveConsoleOptions is not null)
             {
-                await interactiveConsoleOptions.EnterShellAsync();
+                await interactiveConsoleOptions.BeginInteractiveModeAsync();
                 return default;
             }
         }
