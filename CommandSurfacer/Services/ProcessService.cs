@@ -42,7 +42,7 @@ public class ProcessService : IProcessService
             StandardError = standardOutput.Any() ? standardError : null
         };
 
-        if (result.ExitCode == 0)
+        if (result.ExitCode > 0)
             throw new ApplicationException($"Process finished with exit code {result.ExitCode}: {result.StandardError}");
 
         return result;
