@@ -2,5 +2,5 @@
 
 public interface IProcessService
 {
-    public string Run(string exeFileName, string arguments);
+    public ProcessResult Run(string exeFileName, string arguments);
 }

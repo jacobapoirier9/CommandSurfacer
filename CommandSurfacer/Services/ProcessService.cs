@@ -1,11 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CommandSurfacer.Services;
 
 public class ProcessService : IProcessService
 {
-    public string Run(string exeFileName, string arguments)
+    public ProcessResult Run(string exeFileName, string arguments)
     {
         var process = Process.Start(new ProcessStartInfo
         {
@@ -31,20 +32,33 @@ public class ProcessService : IProcessService
 
         process.WaitForExit();
 
-        if (process.ExitCode == 0)
+        var standardOutput = outputBuilder.ToString();
+        var standardError = errorBuilder.ToString();
+
+        var result = new ProcessResult
         {
-            var output = outputBuilder.ToString();
-            return output;
-        }
-        else
-        {
-            var error = errorBuilder.ToString();
-            throw new ApplicationException($"Process finished with exit code {process.ExitCode}: {error}");
-        }
+            ExitCode = process.ExitCode,
+            StandardOutput = standardOutput.Any() ? standardOutput : null,
+            StandardError = standardOutput.Any() ? standardError : null
+        };
+
+        if (result.ExitCode == 0)
+            throw new ApplicationException($"Process finished with exit code {result.ExitCode}: {result.StandardError}");
+
+        return result;
     }
 
     public async Task RunAsync(string exeFileName, string arguments)
     {
         await new Task(() => Run(exeFileName, arguments));
     }
+}
+
+public class ProcessResult
+{
+    public int ExitCode { get; set; }
+
+    public string StandardOutput { get; set; }
+
+    public string StandardError { get; set; }
 }
