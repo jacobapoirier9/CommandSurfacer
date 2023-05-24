@@ -43,7 +43,7 @@ public class ProcessService : IProcessService
         };
 
         if (result.ExitCode > 0)
-            throw new ApplicationException($"Process finished with exit code {result.ExitCode}: {result.StandardError}");
+            throw new ApplicationException($"Process finished with exit code {result.ExitCode}: {result.StandardError ?? result.StandardOutput}");
 
         return result;
     }
