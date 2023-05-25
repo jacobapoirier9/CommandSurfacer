@@ -122,44 +122,33 @@ public class ArgsParser : IArgsParser
 
     public object ParseTypedValue(ref string input, SurfaceAttribute surfaceAttribute, Type targetType)
     {
-        if (targetType == typeof(bool) || targetType == typeof(bool?))
+        if (_stringConverter.SupportsType(targetType))
         {
-            var presenceValue = ParsePresenceValue(ref input, surfaceAttribute, targetType);
-            return presenceValue;
-        }
-
-        var stringValue = ParseStringValue(ref input, surfaceAttribute);
-
-        if (stringValue is not null)
-        {
-            var typedValue = _stringConverter.Convert(targetType, stringValue);
-            return typedValue;
-        }
-        else
-        {
-            var injectedService = _serviceProvider.GetService(targetType);
-            if (injectedService is not null)
-                return injectedService;
-
-            try
+            if (targetType == typeof(bool) || targetType == typeof(bool?))
             {
-                var instance = Activator.CreateInstance(targetType);
+                var presenceValue = ParsePresenceValue(ref input, surfaceAttribute, targetType);
+                return presenceValue;
+            }
+
+            var stringValue = ParseStringValue(ref input, surfaceAttribute);
+            return stringValue;
+        }
+        
+        var injectedService = _serviceProvider.GetService(targetType);
+        if (injectedService is not null)
+            return injectedService;
+
+        var instance = Activator.CreateInstance(targetType);
                 
-                var properties = targetType.GetProperties();
-                foreach (var property in properties)
-                {
-                    var attribute = property.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(property.Name);
-                    var value = ParseTypedValue(ref input, surfaceAttribute, property.PropertyType);
-                    property.SetValue(instance, value);
-                }
-
-                return instance;
-            }
-            catch
-            {
-                return null;
-            }
+        var properties = targetType.GetProperties();
+        foreach (var property in properties)
+        {
+            var attribute = property.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(property.Name);
+            var value = ParseTypedValue(ref input, surfaceAttribute, property.PropertyType);
+            property.SetValue(instance, value);
         }
+
+        return instance;
     }
 
     public object[] ParseMethodParameters(ref string input, MethodInfo method, params object[] additionalParameters)

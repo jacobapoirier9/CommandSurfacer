@@ -53,7 +53,8 @@ public class StringConverter : IStringConverter
         };
     }
 
-    public T Convert<T>(string input = null) => (T)Convert(typeof(T), input);
+    public bool SupportsType(Type targetType) => _converters.Keys.Contains(targetType);
+
     public object Convert(Type targetType, string input = null) => 
         _converters.TryGetValue(targetType, out var converter) ? 
             converter(input) :
