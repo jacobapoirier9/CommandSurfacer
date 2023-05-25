@@ -2,96 +2,60 @@
 
 public class StringConverter : IStringConverter
 {
-    public T Convert<T>(string input = null) => (T)Convert(typeof(T), input);
-    public object Convert(Type targetType, string input = null)
+    private readonly Dictionary<Type, Func<string, object>> _converters;
+
+    public StringConverter()
     {
-        if (string.IsNullOrEmpty(input))
-            return input;
+        var allowedTrueValues = new string[] { "true", "yes", "y", "1" };
+        var allowedFalseValues = new string[] { "false", "no", "n", "0" };
 
-        var converted = default(object);
-
-        if (targetType == typeof(string))
-            converted = input;
-
-        if (targetType == typeof(bool) || targetType == typeof(bool?))
+        _converters = new Dictionary<Type, Func<string, object>>()
         {
-            var lower = input.ToLower();
-
-            if (new string[] { "true", "yes", "y", "1" }.Contains(lower))
-                converted = true;
-            else if (new string[] { "false", "no", "n", "0" }.Contains(lower))
-                converted = false;
-            else
-                return Activator.CreateInstance(targetType);
-        }
-
-        else if (targetType == typeof(byte))
-            converted = byte.Parse(input);
-        else if (targetType == typeof(byte?))
-            converted = byte.TryParse(input, out var outValue) ? outValue : null;
-
-        else if (targetType == typeof(short))
-            converted = short.Parse(input);
-        else if (targetType == typeof(short?))
-            converted = short.TryParse(input, out var outValue) ? outValue : null;
-
-        else if (targetType == typeof(int))
-            converted = int.Parse(input);
-        else if (targetType == typeof(int?))
-            converted = int.TryParse(input, out var outValue) ? outValue : null;
-
-        else if (targetType == typeof(long))
-            converted = long.Parse(input);
-        else if (targetType == typeof(long?))
-            converted = long.TryParse(input, out var outValue) ? outValue : null;
-
-        else if (targetType == typeof(double))
-            converted = double.Parse(input);
-        else if (targetType == typeof(double?))
-            converted = double.TryParse(input, out var outValue) ? outValue : null;
-
-        else if (targetType == typeof(float))
-            converted = float.Parse(input);
-        else if (targetType == typeof(float?))
-            converted = float.TryParse(input, out var outValue) ? outValue : null;
-
-        else if (targetType == typeof(decimal))
-            converted = decimal.Parse(input);
-        else if (targetType == typeof(decimal?))
-            converted = decimal.TryParse(input, out var outValue) ? outValue : null;
-
-        else if (targetType == typeof(TimeSpan))
-            converted = TimeSpan.Parse(input);
-        else if (targetType == typeof(TimeSpan?))
-            converted = TimeSpan.TryParse(input, out var outValue) ? outValue : null;
-
-        else if (targetType == typeof(DateTime))
-            converted = DateTime.Parse(input);
-        else if (targetType == typeof(DateTime?))
-            converted = DateTime.TryParse(input, out var outValue) ? outValue : null;
-
-        if (targetType == typeof(FileInfo))
-        {
-            var filePath = Convert<string>(input);
-            if (filePath is not null)
             {
-                var fileInfo = new FileInfo(filePath);
-                return fileInfo;
-            }
-        }
-        else if (targetType == typeof(DirectoryInfo))
-        {
-            var directoryPath = Convert<string>(input);
-            if (directoryPath is not null)
+                typeof(bool), (input) =>
+                {
+                    if (allowedTrueValues.Contains(input, StringComparer.OrdinalIgnoreCase))
+                        return true;
+                    else if (allowedFalseValues.Contains(input, StringComparer.OrdinalIgnoreCase))
+                        return false;
+
+                    throw new NotImplementedException("If the regex did not match, this should never be firing");
+                }
+            },
             {
-                var directoryInfo = new DirectoryInfo(directoryPath);
-                return directoryInfo;
-            }
-        }
+                typeof(bool?), (input) =>
+                {
+                    if (allowedTrueValues.Contains(input, StringComparer.OrdinalIgnoreCase))
+                        return true;
+                    else if (allowedFalseValues.Contains(input, StringComparer.OrdinalIgnoreCase))
+                        return false;
 
-        if (converted == default)
-            throw new ApplicationException("Converting string to " + targetType.Name + " is not supported.");
-
-        return converted;
+                    throw new NotImplementedException("If the regex did not match, this should never be firing");
+                }
+            },
+            { typeof(string), (input) => input },
+            { typeof(byte), (input) => byte.Parse(input) },
+            { typeof(byte?), (input) => byte.TryParse(input, out var outValue) ? outValue : null },
+            { typeof(short), (input) => short.Parse(input) },
+            { typeof(short?), (input) => short.TryParse(input, out var outValue) ? outValue : null },
+            { typeof(int), (input) => int.Parse(input) },
+            { typeof(int?), (input) => int.TryParse(input, out var outValue) ? outValue : null },
+            { typeof(long), (input) => long.Parse(input) },
+            { typeof(long?), (input) => long.TryParse(input, out var outValue) ? outValue : null },
+            { typeof(double), (input) => double.Parse(input) },
+            { typeof(double?), (input) => double.TryParse(input, out var outValue) ? outValue : null },
+            { typeof(float), (input) => float.Parse(input) },
+            { typeof(float?), (input) => float.TryParse(input, out var outValue) ? outValue : null },
+            { typeof(decimal), (input) => decimal.Parse(input) },
+            { typeof(decimal?), (input) => decimal.TryParse(input, out var outValue) ? outValue : null },
+            { typeof(FileInfo), (input) => new FileInfo(input) },
+            { typeof(DirectoryInfo), (input) => new DirectoryInfo(input) }
+        };
     }
+
+    public T Convert<T>(string input = null) => (T)Convert(typeof(T), input);
+    public object Convert(Type targetType, string input = null) => 
+        _converters.TryGetValue(targetType, out var converter) ? 
+            converter(input) :
+            throw new ApplicationException("Converting string to " + targetType.Name + " is not supported.");
 }
