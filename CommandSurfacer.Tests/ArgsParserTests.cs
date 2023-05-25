@@ -343,6 +343,36 @@ public class ArgsParserTests : BaseTests
     #endregion
 
     #region Parse String Value
+    [Theory]
+    [InlineData("--test-name value")]
+    [InlineData("--test-name 'value'")]
+    [InlineData("--test-name \"value\"")]
+    [InlineData("--test-name D:\\Path\\With\\No\\Spaces\\File.txt")]
+    [InlineData("--test-name 'D:\\Path\\With\\No\\Spaces\\File.txt'")]
+    [InlineData("--test-name \"D:\\Path\\With\\No\\Spaces\\File.txt\"")]
+    [InlineData("--test-name 'D:\\Path\\With Spaces\\File.txt'")]
+    [InlineData("--test-name \"D:\\Path\\With Spaces\\File.txt\"")]
+    [InlineData("--test-name 'Single Outer, \"Double inner\"'")]
+    [InlineData("--test-name \"Double Outer, 'Single inner'\"")]
+    public void ParseStringValue_ReturnsValidValue_Beginning(string inputValue)
+    {
+        var input = $"{inputValue}     --notused junk --notused";
+        var surface = new SurfaceAttribute("test-name");
+
+        var expected = inputValue.Replace("--test-name", string.Empty).Trim(' ');
+        if (
+            (expected.StartsWith('"') && expected.EndsWith('"')) ||
+            (expected.StartsWith("'") && expected.EndsWith("'"))
+        )
+            expected = expected.Substring(1, expected.Length - 2);
+
+
+        var output = _argsParser.ParseStringValue(ref input, surface);
+
+        Assert.NotNull(output);
+        Assert.Equal(expected, output);
+        Assert.Equal("--notused junk --notused", input);
+    }
 
     [Theory]
     [InlineData("--test-name value")]
@@ -355,9 +385,40 @@ public class ArgsParserTests : BaseTests
     [InlineData("--test-name \"D:\\Path\\With Spaces\\File.txt\"")]
     [InlineData("--test-name 'Single Outer, \"Double inner\"'")]
     [InlineData("--test-name \"Double Outer, 'Single inner'\"")]
-    public void ParseStringValue_ReturnsValidValue(string inputValue)
+    public void ParseStringValue_ReturnsValidValue_Middle(string inputValue)
     {
         var input = $"--notused junk   {inputValue}   --notused";
+        var surface = new SurfaceAttribute("test-name");
+
+        var expected = inputValue.Replace("--test-name", string.Empty).Trim(' ');
+        if (
+            (expected.StartsWith('"') && expected.EndsWith('"')) ||
+            (expected.StartsWith("'") && expected.EndsWith("'"))
+        )
+            expected = expected.Substring(1, expected.Length - 2);
+
+
+        var output = _argsParser.ParseStringValue(ref input, surface);
+
+        Assert.NotNull(output);
+        Assert.Equal(expected, output);
+        Assert.Equal("--notused junk --notused", input);
+    }
+
+    [Theory]
+    [InlineData("--test-name value")]
+    [InlineData("--test-name 'value'")]
+    [InlineData("--test-name \"value\"")]
+    [InlineData("--test-name D:\\Path\\With\\No\\Spaces\\File.txt")]
+    [InlineData("--test-name 'D:\\Path\\With\\No\\Spaces\\File.txt'")]
+    [InlineData("--test-name \"D:\\Path\\With\\No\\Spaces\\File.txt\"")]
+    [InlineData("--test-name 'D:\\Path\\With Spaces\\File.txt'")]
+    [InlineData("--test-name \"D:\\Path\\With Spaces\\File.txt\"")]
+    [InlineData("--test-name 'Single Outer, \"Double inner\"'")]
+    [InlineData("--test-name \"Double Outer, 'Single inner'\"")]
+    public void ParseStringValue_ReturnsValidValue_End(string inputValue)
+    {
+        var input = $"--notused junk --notused   {inputValue}";
         var surface = new SurfaceAttribute("test-name");
 
         var expected = inputValue.Replace("--test-name", string.Empty).Trim(' ');
@@ -381,9 +442,39 @@ public class ArgsParserTests : BaseTests
     [InlineData("--test-name")]
     [InlineData("--test-name ")]
     [InlineData("--test-name  ")]
-    public void ParseStringValue_ReturnsEmptyString(string inputValue)
+    public void ParseStringValue_ReturnsEmptyString_Beginning(string inputValue)
+    {
+        var input = $"{inputValue}     --notused junk --notused";
+        var surface = new SurfaceAttribute("test-name");
+
+        var output = _argsParser.ParseStringValue(ref input, surface);
+        Assert.Null(output);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("--test-name")]
+    [InlineData("--test-name ")]
+    [InlineData("--test-name  ")]
+    public void ParseStringValue_ReturnsEmptyString_Middle(string inputValue)
     {
         var input = $"--notused junk   {inputValue}   --notused";
+        var surface = new SurfaceAttribute("test-name");
+
+        var output = _argsParser.ParseStringValue(ref input, surface);
+        Assert.Null(output);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("--test-name")]
+    [InlineData("--test-name ")]
+    [InlineData("--test-name  ")]
+    public void ParseStringValue_ReturnsEmptyString_End(string inputValue)
+    {
+        var input = $"--notused junk    --notused   {inputValue}";
         var surface = new SurfaceAttribute("test-name");
 
         var output = _argsParser.ParseStringValue(ref input, surface);
@@ -400,5 +491,9 @@ public class ArgsParserTests : BaseTests
         Assert.Equal("D:\\Path\\With", output);
         Assert.Equal("--notused junk Spaces\\File.txt   --notused", input);
     }
+    #endregion
+
+    #region Parse Typed Value
+
     #endregion
 }
