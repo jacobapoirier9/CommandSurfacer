@@ -33,9 +33,13 @@ internal static class Program
 public class TestService
 {
     [Surface("test")]
-    public async Task Test(IProcessService processService, string path)
+    public async Task Test(string path)
     {
-        var currentProcess = Process.GetCurrentProcess();
-        var output = processService.Run("powershell.exe", $"-Command {{ Get-CimInstance Win32_Process -Filter \"ProcessId = '{currentProcess.Id}'\" | select ParentProcessId }}");
     }
 }
+
+/*
+ * 
+        var currentProcess = Process.GetCurrentProcess();
+        var output = processService.Run("powershell.exe", $"-Command {{ Get-CimInstance Win32_Process -Filter \"ProcessId = '{currentProcess.Id}'\" | select ParentProcessId }}");
+ */
