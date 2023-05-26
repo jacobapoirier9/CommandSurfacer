@@ -77,6 +77,8 @@ public class CommandSurfacerTestFixture : IDisposable
                 services.AddSingleton<IStringConverter, StringConverter>();
                 services.AddSingleton<IArgsParser, ArgsParser>();
                 services.AddSingleton<ICommandRunner, CommandRunner>();
+
+                services.AddSingleton<InjectedService>();
             })
             .Build();
     }
@@ -112,4 +114,18 @@ public class SampleServiceThree
 {
     [Surface("five")]
     public void MethodFive() { }
+}
+
+public class InjectedService
+{
+    public const string Success = nameof(Success);
+
+    public string GetSuccess() => Success;
+}
+
+public class NotInjectedService
+{
+    public const string Success = nameof(Success);
+
+    public string GetSuccess() => Success;
 }

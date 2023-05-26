@@ -1,6 +1,5 @@
 ﻿using CommandSurfacer.Services;
 using Microsoft.Extensions.DependencyInjection;
-using System.Security.Cryptography.X509Certificates;
 
 namespace CommandSurfacer.Tests;
 
@@ -494,6 +493,136 @@ public class ArgsParserTests : BaseTests
     #endregion
 
     #region Parse Typed Value
+    [Fact] public void ParseTypedValue_Byte() => ParseTypedValue_CorrectTypeMapping<byte>(1);
+    [Fact] public void ParseTypedValue_Short() => ParseTypedValue_CorrectTypeMapping<short>(1);
+    [Fact] public void ParseTypedValue_Int() => ParseTypedValue_CorrectTypeMapping<int>(1);
+    [Fact] public void ParseTypedValue_Long() => ParseTypedValue_CorrectTypeMapping<long>(1);
+    [Fact] public void ParseTypedValue_Double() => ParseTypedValue_CorrectTypeMapping<double>(1);
+    [Fact] public void ParseTypedValue_Float() => ParseTypedValue_CorrectTypeMapping<float>(1);
+    [Fact] public void ParseTypedValue_Decimal() => ParseTypedValue_CorrectTypeMapping<decimal>(1);
 
+    [Fact] public void ParseTypedValue_NullableByte() => ParseTypedValue_CorrectTypeMapping<byte?>(null);
+    [Fact] public void ParseTypedValue_NullableShort() => ParseTypedValue_CorrectTypeMapping<short?>(null);
+    [Fact] public void ParseTypedValue_NullableInt() => ParseTypedValue_CorrectTypeMapping<int?>(null);
+    [Fact] public void ParseTypedValue_NullableLong() => ParseTypedValue_CorrectTypeMapping<long?>(null);
+    [Fact] public void ParseTypedValue_NullableDouble() => ParseTypedValue_CorrectTypeMapping<double?>(null);
+    [Fact] public void ParseTypedValue_NullableFloat() => ParseTypedValue_CorrectTypeMapping<float?>(null);
+    [Fact] public void ParseTypedValue_NullableDecimal() => ParseTypedValue_CorrectTypeMapping<decimal?>(null);
+
+    private void ParseTypedValue_CorrectTypeMapping<T>(T inputAndExpectedValue)
+    {
+        var targetType = typeof(T);
+
+        var input = $"--test-name {inputAndExpectedValue}";
+        var surface = new SurfaceAttribute("test-name");
+
+        var output = _argsParser.ParseTypedValue(ref input, surface, targetType);
+
+        if (output is not null) 
+            Assert.Equal(targetType, output.GetType());
+        Assert.Equal(output, inputAndExpectedValue);
+    }
+
+    [Fact]
+    public void ParseTypedValue_CreatesStrongType()
+    {
+        var input = string.Join(' ', new string[]
+        {
+            "--string value",
+            "--byte 1 --short 1 --int 1 --long 1 --double 1 --float 1 --decimal 1 --bool yes",
+            "--file .\\Sandbox\\TestFile.txt --directory .\\Sandbox"
+        });
+
+        var parsed = (ParseTypedValue_StrongType)_argsParser.ParseTypedValue(ref input, null, typeof(ParseTypedValue_StrongType));
+
+        Assert.Equal("value", parsed.String);
+        Assert.Equal(1, parsed.Byte);
+        Assert.Equal(1, parsed.Short);
+        Assert.Equal(1, parsed.Int);
+        Assert.Equal(1, parsed.Long);
+        Assert.Equal(1, parsed.Double);
+        Assert.Equal(1, parsed.Float);
+        Assert.Equal(1, parsed.Decimal);
+        Assert.True(parsed.Bool);
+
+        Assert.NotNull(parsed.File);
+        Assert.True(parsed.File.Exists);
+        Assert.Equal("TestFile.txt", parsed.File.Name);
+        
+        Assert.NotNull(parsed.Directory);
+        Assert.True(parsed.Directory.Exists);
+        Assert.Equal("Sandbox", parsed.Directory.Name);
+    }
+
+    [Fact]
+    public void ParseTypedValue_CreatesStrongTypeWithNestedType()
+    {
+        var input = "--name-one ONE --name-two TWO";
+
+        var parsed = (ParseTypedValue_Parent)_argsParser.ParseTypedValue(ref input, null, typeof(ParseTypedValue_Parent));
+
+        Assert.NotNull(parsed);
+        Assert.Equal("ONE", parsed.NameOne);
+        Assert.NotNull(parsed.InjectedService);
+        Assert.Equal(InjectedService.Success, parsed.InjectedService.GetSuccess());
+
+        Assert.NotNull(parsed.Child);
+        Assert.Equal("TWO", parsed.Child.NameTwo);
+        Assert.Equal(InjectedService.Success, parsed.Child.InjectedService.GetSuccess());
+    }
+
+    private class ParseTypedValue_StrongType
+    {
+        [Surface(nameof(String))]
+        public string String { get; set; }
+
+        [Surface(nameof(Byte))]
+        public byte Byte { get; set; }
+
+        [Surface(nameof(Short))]
+        public short Short { get; set; }
+
+        [Surface(nameof(Int))]
+        public int Int { get; set; }
+
+        [Surface(nameof(Long))]
+        public long Long { get; set; }
+
+        [Surface(nameof(Double))]
+        public double Double { get; set; }
+
+        [Surface(nameof(Float))]
+        public float Float { get; set; }
+
+        [Surface(nameof(Decimal))]
+        public decimal Decimal { get; set; }
+
+        [Surface(nameof(Bool))]
+        public bool Bool { get; set; }
+
+        [Surface(nameof(File))]
+        public FileInfo File { get; set; }
+
+        [Surface(nameof(Directory))]
+        public DirectoryInfo Directory { get; set; }
+    }
+
+    private class ParseTypedValue_Parent
+    {
+        [Surface("name-one")]
+        public string NameOne { get; set; }
+
+        public ParseTypedValue_Child Child { get; set; }
+
+        public InjectedService InjectedService { get; set; }
+    }
+
+    private class ParseTypedValue_Child
+    {
+        [Surface("name-two")]
+        public string NameTwo { get; set; }
+
+        public InjectedService InjectedService { get; set; }
+    }
     #endregion
 }

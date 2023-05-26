@@ -131,7 +131,10 @@ public class ArgsParser : IArgsParser
             }
 
             var stringValue = ParseStringValue(ref input, surfaceAttribute);
-            return stringValue;
+            if (stringValue is null)
+                return null;
+            else
+                return _stringConverter.Convert(targetType, stringValue);
         }
         
         var injectedService = _serviceProvider.GetService(targetType);
@@ -144,7 +147,7 @@ public class ArgsParser : IArgsParser
         foreach (var property in properties)
         {
             var attribute = property.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(property.Name);
-            var value = ParseTypedValue(ref input, surfaceAttribute, property.PropertyType);
+            var value = ParseTypedValue(ref input, attribute, property.PropertyType);
             property.SetValue(instance, value);
         }
 
