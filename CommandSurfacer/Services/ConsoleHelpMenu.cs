@@ -1,4 +1,7 @@
-﻿namespace CommandSurfacer.Services;
+﻿using System.Reflection;
+using System.Text;
+
+namespace CommandSurfacer.Services;
 
 public class CommandSurfacerHelp
 {
@@ -6,15 +9,6 @@ public class CommandSurfacerHelp
 
     public List<IGrouping<SurfaceAttribute, CommandSurface>> TypeLevelIdentifiedSurfaces { get; set; }
 }
-
-public class SurfaceHelp
-{
-    public SurfaceAttribute Attribute { get; set; }
-}
-
-
-
-
 
 public class ConsoleHelpMenu : IConsoleHelpMenu
 {
@@ -48,23 +42,78 @@ public class ConsoleHelpMenu : IConsoleHelpMenu
         return result;
     }
 
+    public void AddCommandSurfaceParameterHelp(StringBuilder builder, CommandSurface surface)
+    {
+        var parameters = surface.Method.GetParameters();
+        foreach (var parameter in parameters)
+        {
+            builder.Append("  ");
+
+            var attribute = parameter.GetCustomAttribute<SurfaceAttribute>();
+            builder.Append(attribute?.Name ?? parameter.Name);
+            if (attribute is not null && !string.IsNullOrEmpty(attribute.HelpText))
+            {
+                builder.Append("  -  ");
+                builder.Append(attribute.HelpText);
+            }
+            builder.AppendLine();
+        }
+    }
+
     [Surface("help")]
     public void DisplayHelpMenu()
     {
         var help = CreateCommandSurfacerHelp();
 
+        var builder = new StringBuilder();
+
+        builder.AppendLine(_interactiveConsoleOptions.Banner);
+        builder.AppendLine();
+
         foreach (var surface in help.MethodLevelIdentifiedSurfaces)
         {
-            Console.WriteLine(surface.MethodAttribute.Name + " - " + surface.MethodAttribute.HelpText);
+            builder.Append(surface.MethodAttribute.Name);
+            if (!string.IsNullOrEmpty(surface.MethodAttribute.HelpText))
+            {
+                builder.Append("  -  ");
+                builder.Append(surface.MethodAttribute.HelpText);
+            }
+
+            builder.AppendLine();
+            AddCommandSurfaceParameterHelp(builder, surface);
         }
+
+        builder.AppendLine();
 
         foreach (var group in help.TypeLevelIdentifiedSurfaces)
         {
-            Console.WriteLine(group.Key.Name + " - " + group.Key.HelpText);
+            builder.Append(group.Key.Name);
+            if (!string.IsNullOrEmpty(group.Key.HelpText))
+            {
+                builder.Append(" - ");
+                builder.Append(group.Key.HelpText);
+            }
+            builder.AppendLine();
+
             foreach (var surface in group)
             {
-                Console.WriteLine(surface.MethodAttribute.Name + " - " + surface.MethodAttribute.HelpText);
+                builder.Append("  ");
+                builder.Append(surface.MethodAttribute.Name);
+                if (!string.IsNullOrEmpty(surface.MethodAttribute.HelpText))
+                {
+                    builder.Append("  -  ");
+                    builder.Append(surface.MethodAttribute.HelpText);
+                }
+
+                builder.AppendLine();
+                builder.Append("  ");
+                AddCommandSurfaceParameterHelp(builder, surface);
             }
+
+            builder.AppendLine();
         }
+
+        var helpText = builder.ToString();
+        Console.WriteLine(helpText);
     }
 }
