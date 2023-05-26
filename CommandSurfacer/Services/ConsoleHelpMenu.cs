@@ -15,10 +15,16 @@ public class ConsoleHelpMenu : IConsoleHelpMenu
     private readonly List<CommandSurface> _commandSurfaces;
     private readonly InteractiveConsoleOptions _interactiveConsoleOptions;
 
-    public ConsoleHelpMenu(List<CommandSurface> commandSurfaces, InteractiveConsoleOptions interactiveConsoleOptions)
+    private readonly IStringConverter _stringConverter;
+    private readonly IServiceProvider _serviceProvider;
+
+    public ConsoleHelpMenu(List<CommandSurface> commandSurfaces, InteractiveConsoleOptions interactiveConsoleOptions, IStringConverter stringConverter, IServiceProvider serviceProvider)
     {
         _commandSurfaces = commandSurfaces;
         _interactiveConsoleOptions = interactiveConsoleOptions;
+
+        _stringConverter = stringConverter;
+        _serviceProvider = serviceProvider;
     }
 
     private CommandSurfacerHelp CreateCommandSurfacerHelp()
@@ -42,21 +48,52 @@ public class ConsoleHelpMenu : IConsoleHelpMenu
         return result;
     }
 
-    public void AddCommandSurfaceParameterHelp(StringBuilder builder, CommandSurface surface)
+    private void AddCommandSurfaceParameterHelp(StringBuilder builder, CommandSurface surface, string paddedSpacing)
     {
         var parameters = surface.Method.GetParameters();
         foreach (var parameter in parameters)
         {
+            builder.Append(paddedSpacing);
             builder.Append("  ");
 
-            var attribute = parameter.GetCustomAttribute<SurfaceAttribute>();
-            builder.Append(attribute?.Name ?? parameter.Name);
-            if (attribute is not null && !string.IsNullOrEmpty(attribute.HelpText))
+            var parameterAttribute = parameter.GetCustomAttribute<SurfaceAttribute>();
+            builder.Append(parameterAttribute?.Name ?? parameter.Name);
+
+            if (parameterAttribute is not null && !string.IsNullOrEmpty(parameterAttribute.HelpText))
             {
                 builder.Append("  -  ");
-                builder.Append(attribute.HelpText);
+                builder.Append(parameterAttribute.HelpText);
             }
+
+            var typeAttribute = parameter.ParameterType.GetCustomAttribute<SurfaceAttribute>();
+            if (typeAttribute is not null && !string.IsNullOrEmpty(typeAttribute.HelpText))
+            {
+                builder.Append("  -  ");
+                builder.Append(typeAttribute.HelpText);
+            }
+
             builder.AppendLine();
+
+            if (!_stringConverter.SupportsType(parameter.ParameterType) && _serviceProvider.GetService(parameter.ParameterType) is null)
+            {
+                var properties = parameter.ParameterType.GetProperties();
+                foreach (var property in properties)
+                {
+                    builder.Append(paddedSpacing);
+                    builder.Append("    ");
+
+                    var propertyAttribute = property.GetCustomAttribute<SurfaceAttribute>();
+                    builder.Append(propertyAttribute?.Name ?? property.Name);
+
+                    if (propertyAttribute is not null && !string.IsNullOrEmpty(propertyAttribute.HelpText))
+                    {
+                        builder.Append("  -  ");
+                        builder.Append(propertyAttribute.HelpText);
+                    }
+
+                    builder.AppendLine();
+                }
+            }
         }
     }
 
@@ -80,7 +117,7 @@ public class ConsoleHelpMenu : IConsoleHelpMenu
             }
 
             builder.AppendLine();
-            AddCommandSurfaceParameterHelp(builder, surface);
+            AddCommandSurfaceParameterHelp(builder, surface, "");
         }
 
         builder.AppendLine();
@@ -93,6 +130,7 @@ public class ConsoleHelpMenu : IConsoleHelpMenu
                 builder.Append(" - ");
                 builder.Append(group.Key.HelpText);
             }
+
             builder.AppendLine();
 
             foreach (var surface in group)
@@ -106,8 +144,7 @@ public class ConsoleHelpMenu : IConsoleHelpMenu
                 }
 
                 builder.AppendLine();
-                builder.Append("  ");
-                AddCommandSurfaceParameterHelp(builder, surface);
+                AddCommandSurfaceParameterHelp(builder, surface, "  ");
             }
 
             builder.AppendLine();

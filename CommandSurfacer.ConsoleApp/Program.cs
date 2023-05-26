@@ -34,7 +34,7 @@ internal static class Program
 public class TestService
 {
     [Surface("test", HelpText = "Fire the test method, generally used for debugging purposes")]
-    public async Task Test(string path)
+    public async Task Test(string path, Test test)
     {
     }
 }
@@ -43,7 +43,14 @@ public class TestService
 public class ServiceOne
 {
     [Surface("one", HelpText = "Run the first method")]
-    public void TestOne(int age) { }
+    public void TestOne(int age, Test test) { }
+}
+
+[Surface("Jake", HelpText = "HEELO")]
+public class Test
+{
+    
+    public string Name { get; set; }
 }
 
 /*
