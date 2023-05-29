@@ -71,14 +71,16 @@ public class ArgsParser : IArgsParser
         var commandPrefixes = new string[] { "--", "-", "/" };
         var commandPrefixesPattern = string.Join('|', commandPrefixes.OrderByDescending(s => s.Length).Select(s => Regex.Escape(s)));
 
-        var regex = new Regex($@"(?<Prefix>{commandPrefixesPattern})(?<ArgumentName>{surfaceAttribute.Name})(?<ArgumentNameTerminator>[\s:=]+(?<ArgumentValue>{string.Join('|', allowedBooleanValues)})?|$)", RegexOptions.IgnoreCase);
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>test-name)(?<Separator>[ :=]+(?<Value>false|true|yes|no|y|n|1|0)? *|$)
+        var pattern = @$"(?<= |^) *(?<Prefix>{commandPrefixesPattern})(?<Name>{surfaceAttribute.Name})(?<Separator>[ :=]+(?<Value>{allowedBooleanValuesPattern})? *|$)";
+        var  regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
         if (match.Success)
         {
-            input = regex.Replace(input, m => string.Empty);
+            input = regex.Replace(input, m => string.Empty).Trim(' ');
 
-            var group = match.Groups["ArgumentValue"];
+            var group = match.Groups["Value"];
 
             if (group.Success)
                 return _stringConverter.Convert<bool>(group.Value); // Argument value was present, and should already be in a valid true/false string format.
@@ -94,16 +96,25 @@ public class ArgsParser : IArgsParser
         var commandPrefixes = new string[] { "--", "-", "/" };
         var commandPrefixesPattern = string.Join('|', commandPrefixes.OrderByDescending(s => s.Length).Select(s => Regex.Escape(s)));
 
-        var regex = new Regex($@"(?<Prefix>{commandPrefixesPattern})(?<ArgumentName>{surfaceAttribute.Name})(?<ArgumentNameTerminator>[\s:=]+)(?<ArgumentValue>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}]*""|'[\w\s:\\.-{{}}]*')", RegexOptions.IgnoreCase);
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>test-name)(?<Separator>[ :=]+)(?<Value>[\w:\\.-{}]+|"[\w\s:\\.-{}',]*"|'[\w\s:\\.-{}",]*') *|$
+        var pattern = $@"(?<= |^) *(?<Prefix>{commandPrefixesPattern})(?<Name>{surfaceAttribute.Name})(?<Separator>[ :=]+)(?<Value>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}',]*""|'[\w\s:\\.-{{}}"",]*') *|$";
+        var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
         if (match.Success)
         {
-            input = regex.Replace(input, m => string.Empty);
+            input = regex.Replace(input, m => string.Empty).Trim(' ');
 
-            var group = match.Groups["ArgumentValue"];
-            var stringValue = group.Value.Trim('\'', '"', ' ');
-            return stringValue;
+            var group = match.Groups["Value"];
+            var stringValue = group.Value.Trim(' ');
+
+            if (
+                (stringValue.StartsWith('"') && stringValue.EndsWith('"')) ||
+                (stringValue.StartsWith("'") && stringValue.EndsWith("'"))
+            )
+                stringValue = stringValue.Substring(1, stringValue.Length - 2);
+
+            return string.IsNullOrEmpty(stringValue) ? null : stringValue;
         }
 
         return null;
@@ -111,44 +122,36 @@ public class ArgsParser : IArgsParser
 
     public object ParseTypedValue(ref string input, SurfaceAttribute surfaceAttribute, Type targetType)
     {
-        if (targetType == typeof(bool) || targetType == typeof(bool?))
+        if (_stringConverter.SupportsType(targetType))
         {
-            var presenceValue = ParsePresenceValue(ref input, surfaceAttribute, targetType);
-            return presenceValue;
-        }
-
-        var stringValue = ParseStringValue(ref input, surfaceAttribute);
-
-        if (stringValue is not null)
-        {
-            var typedValue = _stringConverter.Convert(targetType, stringValue);
-            return typedValue;
-        }
-        else
-        {
-            var injectedService = _serviceProvider.GetService(targetType);
-            if (injectedService is not null)
-                return injectedService;
-
-            try
+            if (targetType == typeof(bool) || targetType == typeof(bool?))
             {
-                var instance = Activator.CreateInstance(targetType);
-                
-                var properties = targetType.GetProperties();
-                foreach (var property in properties)
-                {
-                    var attribute = property.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(property.Name);
-                    var value = ParseTypedValue(ref input, surfaceAttribute, property.PropertyType);
-                    property.SetValue(instance, value);
-                }
-
-                return instance;
+                var presenceValue = ParsePresenceValue(ref input, surfaceAttribute, targetType);
+                return presenceValue;
             }
-            catch
-            {
+
+            var stringValue = ParseStringValue(ref input, surfaceAttribute);
+            if (stringValue is null)
                 return null;
-            }
+            else
+                return _stringConverter.Convert(targetType, stringValue);
         }
+        
+        var injectedService = _serviceProvider.GetService(targetType);
+        if (injectedService is not null)
+            return injectedService;
+
+        var instance = Activator.CreateInstance(targetType);
+                
+        var properties = targetType.GetProperties();
+        foreach (var property in properties)
+        {
+            var attribute = property.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(property.Name);
+            var value = ParseTypedValue(ref input, attribute, property.PropertyType);
+            property.SetValue(instance, value);
+        }
+
+        return instance;
     }
 
     public object[] ParseMethodParameters(ref string input, MethodInfo method, params object[] additionalParameters)

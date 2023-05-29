@@ -10,7 +10,7 @@ internal static class Program
     private static void Main(string[] args) => MainAsync(args).GetAwaiter().GetResult();
     private static async Task MainAsync(string[] args)
     {
-        args = new string[] { "test --path \"D:\\Test.txt\"" };
+        args = new string[] { "help" };
 
         var client = Client.Create()
             .AddInteractiveConsole(options =>
@@ -21,6 +21,7 @@ internal static class Program
             .AddServices(services =>
             {
                 services.AddSingleton<TestService>();
+                services.AddSingleton<ServiceOne>();
             });
 
         client.Run(args);
@@ -32,10 +33,28 @@ internal static class Program
 
 public class TestService
 {
-    [Surface("test")]
-    public async Task Test(IProcessService processService, string path)
+    [Surface("test", HelpText = "Fire the test method, generally used for debugging purposes")]
+    public async Task Test(string path, Test test)
     {
-        var currentProcess = Process.GetCurrentProcess();
-        var output = processService.Run("powershell.exe", $"-Command {{ Get-CimInstance Win32_Process -Filter \"ProcessId = '{currentProcess.Id}'\" | select ParentProcessId }}");
     }
 }
+
+[Surface("service-one")]
+public class ServiceOne
+{
+    [Surface("one", HelpText = "Run the first method")]
+    public void TestOne(int age, Test test) { }
+}
+
+[Surface("Jake", HelpText = "HEELO")]
+public class Test
+{
+    
+    public string Name { get; set; }
+}
+
+/*
+ * 
+        var currentProcess = Process.GetCurrentProcess();
+        var output = processService.Run("powershell.exe", $"-Command {{ Get-CimInstance Win32_Process -Filter \"ProcessId = '{currentProcess.Id}'\" | select ParentProcessId }}");
+ */
