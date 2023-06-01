@@ -202,7 +202,8 @@ public class ArgsParser : IArgsParser
             response.Add(value);
         }
 
-        var regex = new Regex(@"(?<ArgumentValue>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}]*""|'[\w\s:\\.-{{}}]*')");
+        var pattern = @"(?<ArgumentValue>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}]*""|'[\w\s:\\.-{{}}]*')";
+        var regex = new Regex(pattern);
         var matches = regex.Matches(input).Cast<Match>().ToList();
 
         var matchesIndex = 0;
