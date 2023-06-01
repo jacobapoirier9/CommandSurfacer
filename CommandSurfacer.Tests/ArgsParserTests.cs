@@ -630,7 +630,7 @@ public class ArgsParserTests : BaseTests
     [Fact]
     public void GetSpecialValue_TextReader()
     {
-        var standardInput = _argsParser.GetSpecialValue(null, typeof(TextReader));
+        var standardInput = _argsParser.GetSpecialValue(typeof(TextReader));
         Assert.NotNull(standardInput);
 
         Assert.Equal(Console.In, standardInput);
@@ -639,7 +639,7 @@ public class ArgsParserTests : BaseTests
     [Fact]
     public void GetSpecialValue_TextWriter()
     {
-        var standardOutput = _argsParser.GetSpecialValue(null, typeof(TextWriter));
+        var standardOutput = _argsParser.GetSpecialValue(typeof(TextWriter));
         Assert.NotNull(standardOutput);
 
         Assert.Equal(Console.Out, standardOutput);
@@ -648,14 +648,14 @@ public class ArgsParserTests : BaseTests
     [Fact]
     public void GetSpecialValue_ServiceCollection()
     {
-        var serviceProvider = _argsParser.GetSpecialValue(null, typeof(IServiceProvider));
+        var serviceProvider = _argsParser.GetSpecialValue(typeof(IServiceProvider));
         Assert.NotNull(serviceProvider);
     }
 
     [Fact]
     public void GetSpecialValue_Null()
     {
-        var result = _argsParser.GetSpecialValue(null, typeof(string));
+        var result = _argsParser.GetSpecialValue(typeof(string));
         Assert.Null(result);
     }
     #endregion

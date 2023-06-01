@@ -11,11 +11,11 @@ public class ArgsParser : IArgsParser
 
     private readonly Regex _commandSurfaceRegex;
 
-    private readonly Dictionary<Type, Func<SurfaceAttribute, object>> _getSpecialValues =
-        new Dictionary<Type, Func<SurfaceAttribute, object>>()
+    private readonly Dictionary<Type, Func<object>> _getSpecialValues =
+        new Dictionary<Type, Func<object>>()
         {
-            { typeof(TextReader), (attr) => Console.In },
-            { typeof(TextWriter), (attr) => Console.Out },
+            { typeof(TextReader), () => Console.In },
+            { typeof(TextWriter), () => Console.Out },
         };
 
     public ArgsParser(List<CommandSurface> commandSurfaces, IStringConverter stringConverter, IServiceProvider serviceProvider)
@@ -156,11 +156,11 @@ public class ArgsParser : IArgsParser
         return instance;
     }
 
-    public object GetSpecialValue(SurfaceAttribute surfaceAttribute, Type targetType)
+    public object GetSpecialValue(Type targetType)
     {
         if (_getSpecialValues.TryGetValue(targetType, out var getSpecialValue))
         {
-            var specialValue = getSpecialValue(surfaceAttribute);
+            var specialValue = getSpecialValue();
             return specialValue;
         }
         else
@@ -180,7 +180,7 @@ public class ArgsParser : IArgsParser
         foreach (var parameter in parameters)
         {
             var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(parameter.Name);
-            var value = GetSpecialValue(surfaceAttribute, parameter.ParameterType) ?? ParseTypedValue(ref input, surfaceAttribute, parameter.ParameterType);
+            var value = GetSpecialValue(parameter.ParameterType) ?? ParseTypedValue(ref input, surfaceAttribute, parameter.ParameterType);
 
             // If ParseTypedValue returns the default value, we do not want to add it to response.
             // This will allow anonymous parameters to be inserted more accurately.
