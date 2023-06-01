@@ -55,8 +55,20 @@ public class StringConverter : IStringConverter
 
     public bool SupportsType(Type targetType) => _converters.Keys.Contains(targetType);
 
-    public object Convert(Type targetType, string input = null) => 
-        _converters.TryGetValue(targetType, out var converter) ? 
-            converter(input) :
-            throw new ApplicationException("Converting string to " + targetType.Name + " is not supported.");
+    public object Convert(Type targetType, string input = null)
+    {
+        if (_converters.TryGetValue(targetType, out var converter))
+        {
+            try
+            {
+                return converter(input);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"An error occurrded converting '{input}' to type {targetType}", ex);
+            }
+        }
+
+        throw new InvalidOperationException($"Converting string to {targetType} is not supported.");
+    }
 }

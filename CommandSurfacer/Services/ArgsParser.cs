@@ -214,14 +214,10 @@ public class ArgsParser : IArgsParser
             var match = matches.ElementAtOrDefault(matchesIndex);
             if (match is not null)
             {
-                try
-                {
-                    response[i] = _stringConverter.Convert(parameters[i].ParameterType, match.Value.Trim('\'', '"', ' '));
-                    matchesIndex++;
+                response[i] = _stringConverter.Convert(parameters[i].ParameterType, match.Value.Trim('\'', '"', ' '));
+                matchesIndex++;
 
-                    input = ReplaceFirstOccurance(input, match.Value, string.Empty).Trim('\'', '"', ' ');
-                }
-                catch { }
+                input = ReplaceFirstOccurance(input, match.Value, string.Empty).Trim('\'', '"', ' ');
             }
         }
 
