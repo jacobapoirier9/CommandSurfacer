@@ -35,14 +35,14 @@ public class Client
         var options = new InteractiveConsoleOptions
         {
             Banner = null,
-            Prompt = " >> "
+            Prompt = " >> ",
+            PromptFunc = null,
+            OnError = null,
+            OnErrorCommand = "help"
         };
 
         if (configure is not null)
             configure(options);
-
-        if (options.PromptFunc is not null)
-            options.Prompt = null;
 
         _serviceCollection.TryAddSingleton(options);
 

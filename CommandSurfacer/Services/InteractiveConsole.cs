@@ -39,10 +39,14 @@ public class InteractiveConsole : IInteractiveConsole
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
+
                 if (_options.OnError is not null)
                     _options.OnError(ex);
-                else
-                    Console.WriteLine(ex);
+
+                if (_options.OnErrorCommand is not null)
+                    await _commandRunner.RunAsync("help");
+
             }
         }
     }
