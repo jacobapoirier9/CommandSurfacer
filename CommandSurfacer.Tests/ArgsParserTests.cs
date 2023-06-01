@@ -625,4 +625,38 @@ public class ArgsParserTests : BaseTests
         public InjectedService InjectedService { get; set; }
     }
     #endregion
+
+    #region Get Special Value
+    [Fact]
+    public void GetSpecialValue_TextReader()
+    {
+        var standardInput = _argsParser.GetSpecialValue(null, typeof(TextReader));
+        Assert.NotNull(standardInput);
+
+        Assert.Equal(Console.In, standardInput);
+    }
+
+    [Fact]
+    public void GetSpecialValue_TextWriter()
+    {
+        var standardOutput = _argsParser.GetSpecialValue(null, typeof(TextWriter));
+        Assert.NotNull(standardOutput);
+
+        Assert.Equal(Console.Out, standardOutput);
+    }
+
+    [Fact]
+    public void GetSpecialValue_ServiceCollection()
+    {
+        var serviceProvider = _argsParser.GetSpecialValue(null, typeof(IServiceProvider));
+        Assert.NotNull(serviceProvider);
+    }
+
+    [Fact]
+    public void GetSpecialValue_Null()
+    {
+        var result = _argsParser.GetSpecialValue(null, typeof(string));
+        Assert.Null(result);
+    }
+    #endregion
 }
