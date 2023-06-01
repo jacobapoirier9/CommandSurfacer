@@ -6,33 +6,8 @@ public class StringConverter : IStringConverter
 
     public StringConverter()
     {
-        var allowedTrueValues = new string[] { "true", "yes", "y", "1" };
-        var allowedFalseValues = new string[] { "false", "no", "n", "0" };
-
         _converters = new Dictionary<Type, Func<string, object>>()
         {
-            {
-                typeof(bool), (input) =>
-                {
-                    if (allowedTrueValues.Contains(input, StringComparer.OrdinalIgnoreCase))
-                        return true;
-                    else if (allowedFalseValues.Contains(input, StringComparer.OrdinalIgnoreCase))
-                        return false;
-
-                    throw new NotImplementedException("If the regex did not match, this should never be firing");
-                }
-            },
-            {
-                typeof(bool?), (input) =>
-                {
-                    if (allowedTrueValues.Contains(input, StringComparer.OrdinalIgnoreCase))
-                        return true;
-                    else if (allowedFalseValues.Contains(input, StringComparer.OrdinalIgnoreCase))
-                        return false;
-
-                    throw new NotImplementedException("If the regex did not match, this should never be firing");
-                }
-            },
             { typeof(string), (input) => input },
             { typeof(byte), (input) => byte.Parse(input) },
             { typeof(byte?), (input) => byte.TryParse(input, out var outValue) ? outValue : null },
@@ -55,8 +30,20 @@ public class StringConverter : IStringConverter
 
     public bool SupportsType(Type targetType) => _converters.Keys.Contains(targetType);
 
-    public object Convert(Type targetType, string input = null) => 
-        _converters.TryGetValue(targetType, out var converter) ? 
-            converter(input) :
-            throw new ApplicationException("Converting string to " + targetType.Name + " is not supported.");
+    public object Convert(Type targetType, string input = null)
+    {
+        if (_converters.TryGetValue(targetType, out var converter))
+        {
+            try
+            {
+                return converter(input);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Faled converting string '{input}' to type {targetType}", ex);
+            }
+        }
+
+        throw new InvalidOperationException($"Failed converting string to {targetType}. Not supported.");
+    }
 }

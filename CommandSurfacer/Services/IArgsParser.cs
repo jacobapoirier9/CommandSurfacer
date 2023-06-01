@@ -8,5 +8,6 @@ public interface IArgsParser
     public bool? ParsePresenceValue(ref string input, SurfaceAttribute surfaceAttribute, Type targetType);
     public string ParseStringValue(ref string input, SurfaceAttribute surfaceAttribute);
     public object ParseTypedValue(ref string input, SurfaceAttribute surfaceAttribute, Type targetType);
+    public object GetSpecialValue(Type targetType);
     public object[] ParseMethodParameters(ref string input, MethodInfo method, params object[] additionalParameters);
 }

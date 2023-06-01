@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace CommandSurfacer.Services;
@@ -10,6 +11,13 @@ public class ArgsParser : IArgsParser
     private readonly IServiceProvider _serviceProvider;
 
     private readonly Regex _commandSurfaceRegex;
+
+    private readonly Dictionary<Type, Func<object>> _getSpecialValues =
+        new Dictionary<Type, Func<object>>()
+        {
+            { typeof(TextReader), () => Console.In },
+            { typeof(TextWriter), () => Console.Out },
+        };
 
     public ArgsParser(List<CommandSurface> commandSurfaces, IStringConverter stringConverter, IServiceProvider serviceProvider)
     {
@@ -27,22 +35,19 @@ public class ArgsParser : IArgsParser
             .OrderByDescending(cs => cs.Length)
             .ToList();
 
-        _commandSurfaceRegex = new Regex($"^(?<TypeIdentifier>{string.Join('|', optionalTypeSurfaceIdentifiers)})? *(?<MethodIdentifier>{string.Join('|', optionalMethodSurfaceIdentifiers)})? *", RegexOptions.IgnoreCase);
+        var pattern = $"^(?<TypeIdentifier>{string.Join('|', optionalTypeSurfaceIdentifiers)})? *(?<MethodIdentifier>{string.Join('|', optionalMethodSurfaceIdentifiers)})? *";
+        _commandSurfaceRegex = new Regex(pattern, RegexOptions.IgnoreCase);
     }
 
     public CommandSurface ParseCommandSurface(ref string input)
     {
         var match = _commandSurfaceRegex.Match(input);
-
-        if (!match.Success) // TODO: This check is likely not necessary.
-            throw new ApplicationException($"Unexpected error in {nameof(ParseCommandSurface)}.");
-
         input = _commandSurfaceRegex.Replace(input, m => string.Empty);
 
         var typeIdentifier = match.Groups["TypeIdentifier"].Value;
         var methodIdentifier = match.Groups["MethodIdentifier"].Value;
 
-        var filtered = _commandSurfaces.Where(cs => true); // Create a separate IEnumerable and leave the original list alone.
+        var filtered = _commandSurfaces.Where(cs => true);
 
         if (!string.IsNullOrEmpty(typeIdentifier))
             filtered = filtered.Where(cs => cs.TypeAttribute is not null && string.Equals(cs.TypeAttribute.Name, typeIdentifier, StringComparison.OrdinalIgnoreCase));
@@ -52,10 +57,8 @@ public class ArgsParser : IArgsParser
 
         var results = filtered.ToList();
 
-        if (results.Count == 0)
-            throw new ApplicationException("Could not resolve any command surfaces.");
-        else if (results.Count > 1)
-            throw new ApplicationException("Could not resolve 1 command surface out of " + results.Count + " canditates.");
+        if (results.Count != 1)
+            throw new ApplicationException($"Failed to resolve a single command surface. {results.Count} found.");
 
         return results.First();
     }
@@ -137,12 +140,7 @@ public class ArgsParser : IArgsParser
                 return _stringConverter.Convert(targetType, stringValue);
         }
         
-        var injectedService = _serviceProvider.GetService(targetType);
-        if (injectedService is not null)
-            return injectedService;
-
         var instance = Activator.CreateInstance(targetType);
-                
         var properties = targetType.GetProperties();
         foreach (var property in properties)
         {
@@ -154,15 +152,31 @@ public class ArgsParser : IArgsParser
         return instance;
     }
 
+    public object GetSpecialValue(Type targetType)
+    {
+        if (_getSpecialValues.TryGetValue(targetType, out var getSpecialValue))
+        {
+            var specialValue = getSpecialValue();
+            return specialValue;
+        }
+        else
+        {
+            var injectedService = _serviceProvider.GetService(targetType);
+            return injectedService;
+        }
+    }
+
     public object[] ParseMethodParameters(ref string input, MethodInfo method, params object[] additionalParameters)
     {
         var response = new List<object>();
+
+        var additionalParametersList = additionalParameters.ToList();
 
         var parameters = method.GetParameters();
         foreach (var parameter in parameters)
         {
             var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(parameter.Name);
-            var value = ParseTypedValue(ref input, surfaceAttribute, parameter.ParameterType);
+            var value = GetSpecialValue(parameter.ParameterType) ?? ParseTypedValue(ref input, surfaceAttribute, parameter.ParameterType);
 
             // If ParseTypedValue returns the default value, we do not want to add it to response.
             // This will allow anonymous parameters to be inserted more accurately.
@@ -178,15 +192,19 @@ public class ArgsParser : IArgsParser
 
             if (value is null)
             {
-                var additionalParameter = additionalParameters.FirstOrDefault(ap => ap.GetType().IsAssignableTo(parameter.ParameterType));
+                var additionalParameter = additionalParametersList.FirstOrDefault(ap => ap.GetType().IsAssignableTo(parameter.ParameterType));
                 if (additionalParameter is not null)
+                {
                     value = additionalParameter;
+                    additionalParametersList.Remove(additionalParameter);
+                }
             }
 
             response.Add(value);
         }
 
-        var regex = new Regex(@"(?<ArgumentValue>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}]*""|'[\w\s:\\.-{{}}]*')");
+        var pattern = @"(?<ArgumentValue>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}]*""|'[\w\s:\\.-{{}}]*')";
+        var regex = new Regex(pattern);
         var matches = regex.Matches(input).Cast<Match>().ToList();
 
         var matchesIndex = 0;
@@ -198,15 +216,24 @@ public class ArgsParser : IArgsParser
             var match = matches.ElementAtOrDefault(matchesIndex);
             if (match is not null)
             {
-                try 
-                { 
-                    response[i] = _stringConverter.Convert(parameters[i].ParameterType, match.Value.Trim('\'', '"', ' '));
-                    matchesIndex++;
-                }
-                catch { }
+                response[i] = _stringConverter.Convert(parameters[i].ParameterType, match.Value.Trim('\'', '"', ' '));
+                matchesIndex++;
+
+                input = ReplaceFirstOccurance(input, match.Value, string.Empty).Trim('\'', '"', ' ');
             }
         }
 
         return response.ToArray();
+    }
+
+    private static string ReplaceFirstOccurance(string input, string substring, string replacement)
+    {
+        var firstIndex = input.IndexOf(substring);
+
+        var stringStart = input.Substring(0, firstIndex);
+        var stringEnd = input.Substring(firstIndex + substring.Length);
+
+        var stringFinal = stringStart + replacement + stringEnd;
+        return stringFinal;
     }
 }

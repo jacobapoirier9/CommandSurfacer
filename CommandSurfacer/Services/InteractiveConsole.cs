@@ -4,16 +4,18 @@ namespace CommandSurfacer.Services;
 
 public class InteractiveConsole : IInteractiveConsole
 {
-    public const string EnterInteractiveConsoleCommand = "interactive";
+    public const string EnterInteractiveConsoleCommand = "enter-interactive";
 
     private readonly ICommandRunner _commandRunner;
+    private readonly IResponseProvider _responseProvider;
     private readonly InteractiveConsoleOptions _options;
 
     private bool _continue;
 
-    public InteractiveConsole(ICommandRunner commandRunner, IServiceProvider serviceProvider)
+    public InteractiveConsole(ICommandRunner commandRunner, IResponseProvider responseProvider, IServiceProvider serviceProvider)
     {
         _commandRunner = commandRunner;
+        _responseProvider = responseProvider;
         _options = serviceProvider.GetService<InteractiveConsoleOptions>();
 
         _continue = true;
@@ -28,12 +30,8 @@ public class InteractiveConsole : IInteractiveConsole
 
         while (_continue)
         {
-            if (_options.Prompt is not null)
-                Console.Write(_options.Prompt);
-            else if (_options.PromptFunc is not null)
-                Console.Write(_options.PromptFunc());
-
-            var line = Console.ReadLine();
+            var prompt = _options.Prompt ?? _options.PromptFunc?.Invoke();
+            var line = _responseProvider.GetResponse(prompt);
 
             try
             {
@@ -41,10 +39,14 @@ public class InteractiveConsole : IInteractiveConsole
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
+
                 if (_options.OnError is not null)
-                    _options.OnError(this, ex);
-                else
-                    Console.WriteLine(ex);
+                    _options.OnError(ex);
+
+                if (_options.OnErrorCommand is not null)
+                    await _commandRunner.RunAsync("help");
+
             }
         }
     }

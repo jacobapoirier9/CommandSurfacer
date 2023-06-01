@@ -564,4 +564,12 @@ public class StringConverterTests : BaseTests
         Assert.Null(output);
     }
     #endregion
+
+    #region Exceptions
+    [Fact]
+    public void StringToUnsupportedType_ThrowsException() => Assert.Throws<InvalidOperationException>(() => _stringConverter.Convert<StringConverterTests>(""));
+
+    [Fact]
+    public void StringToNumeric_InvalidFormatException_ThrowsException() => Assert.Throws<InvalidOperationException>(() => _stringConverter.Convert<decimal>("jake"));
+    #endregion
 }

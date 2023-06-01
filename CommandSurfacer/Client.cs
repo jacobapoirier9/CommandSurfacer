@@ -35,14 +35,14 @@ public class Client
         var options = new InteractiveConsoleOptions
         {
             Banner = null,
-            Prompt = " >> "
+            Prompt = " >> ",
+            PromptFunc = null,
+            OnError = null,
+            OnErrorCommand = "help"
         };
 
         if (configure is not null)
             configure(options);
-
-        if (options.PromptFunc is not null)
-            options.Prompt = null;
 
         _serviceCollection.TryAddSingleton(options);
 
@@ -51,8 +51,7 @@ public class Client
 
     public Client AddConsoleHelpMenu()
     {
-        _serviceCollection.AddSingleton<IConsoleHelpMenu, ConsoleHelpMenu>();
-
+        _serviceCollection.AddSingleton<ConsoleHelpMenu>();
         return this;
     }
 
@@ -89,7 +88,7 @@ public class Client
             foreach (var method in methods)
             {
                 var methodAttribute = method.GetCustomAttribute<SurfaceAttribute>();
-                if (typeAttribute is not null || methodAttribute is not null) // We only want to add a command surface if it has been explicitly defined as a surface.
+                if (typeAttribute is not null || methodAttribute is not null)
                 {
                     _commandSurfaces.Add(new CommandSurface
                     {

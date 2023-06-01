@@ -3,25 +3,16 @@ using System.Text;
 
 namespace CommandSurfacer.Services;
 
-public class CommandSurfacerHelp
-{
-    public List<CommandSurface> MethodLevelIdentifiedSurfaces { get; set; }
-
-    public List<IGrouping<SurfaceAttribute, CommandSurface>> TypeLevelIdentifiedSurfaces { get; set; }
-}
-
-public class ConsoleHelpMenu : IConsoleHelpMenu
+public class ConsoleHelpMenu
 {
     private readonly List<CommandSurface> _commandSurfaces;
-    private readonly InteractiveConsoleOptions _interactiveConsoleOptions;
 
     private readonly IStringConverter _stringConverter;
     private readonly IServiceProvider _serviceProvider;
 
-    public ConsoleHelpMenu(List<CommandSurface> commandSurfaces, InteractiveConsoleOptions interactiveConsoleOptions, IStringConverter stringConverter, IServiceProvider serviceProvider)
+    public ConsoleHelpMenu(List<CommandSurface> commandSurfaces, IStringConverter stringConverter, IServiceProvider serviceProvider)
     {
         _commandSurfaces = commandSurfaces;
-        _interactiveConsoleOptions = interactiveConsoleOptions;
 
         _stringConverter = stringConverter;
         _serviceProvider = serviceProvider;
@@ -104,7 +95,6 @@ public class ConsoleHelpMenu : IConsoleHelpMenu
 
         var builder = new StringBuilder();
 
-        builder.AppendLine(_interactiveConsoleOptions.Banner);
         builder.AppendLine();
 
         foreach (var surface in help.MethodLevelIdentifiedSurfaces)
