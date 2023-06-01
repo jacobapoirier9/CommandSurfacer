@@ -11,6 +11,13 @@ public class ArgsParser : IArgsParser
 
     private readonly Regex _commandSurfaceRegex;
 
+    private readonly Dictionary<Type, Func<SurfaceAttribute, object>> _getSpecialValues =
+        new Dictionary<Type, Func<SurfaceAttribute, object>>()
+        {
+            { typeof(TextReader), (attr) => Console.In },
+            { typeof(TextWriter), (attr) => Console.Out },
+        };
+
     public ArgsParser(List<CommandSurface> commandSurfaces, IStringConverter stringConverter, IServiceProvider serviceProvider)
     {
         _commandSurfaces = commandSurfaces;
@@ -137,12 +144,7 @@ public class ArgsParser : IArgsParser
                 return _stringConverter.Convert(targetType, stringValue);
         }
         
-        var injectedService = _serviceProvider.GetService(targetType);
-        if (injectedService is not null)
-            return injectedService;
-
         var instance = Activator.CreateInstance(targetType);
-                
         var properties = targetType.GetProperties();
         foreach (var property in properties)
         {
@@ -154,6 +156,20 @@ public class ArgsParser : IArgsParser
         return instance;
     }
 
+    public object GetSpecialValue(SurfaceAttribute surfaceAttribute, Type targetType)
+    {
+        if (_getSpecialValues.TryGetValue(targetType, out var getSpecialValue))
+        {
+            var specialValue = getSpecialValue(surfaceAttribute);
+            return specialValue;
+        }
+        else
+        {
+            var injectedService = _serviceProvider.GetService(targetType);
+            return injectedService;
+        }
+    }
+
     public object[] ParseMethodParameters(ref string input, MethodInfo method, params object[] additionalParameters)
     {
         var response = new List<object>();
@@ -162,7 +178,7 @@ public class ArgsParser : IArgsParser
         foreach (var parameter in parameters)
         {
             var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(parameter.Name);
-            var value = ParseTypedValue(ref input, surfaceAttribute, parameter.ParameterType);
+            var value = GetSpecialValue(surfaceAttribute, parameter.ParameterType) ?? ParseTypedValue(ref input, surfaceAttribute, parameter.ParameterType);
 
             // If ParseTypedValue returns the default value, we do not want to add it to response.
             // This will allow anonymous parameters to be inserted more accurately.
