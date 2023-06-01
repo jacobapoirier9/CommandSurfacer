@@ -47,6 +47,12 @@ public class StringConverter : IStringConverter
             { typeof(float?), (input) => float.TryParse(input, out var outValue) ? outValue : null },
             { typeof(decimal), (input) => decimal.Parse(input) },
             { typeof(decimal?), (input) => decimal.TryParse(input, out var outValue) ? outValue : null },
+
+            { typeof(DateTime), (input) => DateTime.Parse(input) },
+            { typeof(DateTime?), (input) => DateTime.TryParse(input, out var outValue) ? outValue : null },
+            { typeof(TimeSpan), (input) => TimeSpan.Parse(input) },
+            { typeof(TimeSpan?), (input) => TimeSpan.TryParse(input, out var outValue) ? outValue : null },
+
             { typeof(FileInfo), (input) => new FileInfo(input) },
             { typeof(DirectoryInfo), (input) => new DirectoryInfo(input) }
         };
