@@ -51,8 +51,7 @@ public class Client
 
     public Client AddConsoleHelpMenu()
     {
-        _serviceCollection.AddSingleton<IConsoleHelpMenu, ConsoleHelpMenu>();
-
+        _serviceCollection.AddSingleton<ConsoleHelpMenu>();
         return this;
     }
 
