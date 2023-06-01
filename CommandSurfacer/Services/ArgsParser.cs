@@ -174,6 +174,8 @@ public class ArgsParser : IArgsParser
     {
         var response = new List<object>();
 
+        var additionalParametersList = additionalParameters.ToList();
+
         var parameters = method.GetParameters();
         foreach (var parameter in parameters)
         {
@@ -194,9 +196,12 @@ public class ArgsParser : IArgsParser
 
             if (value is null)
             {
-                var additionalParameter = additionalParameters.FirstOrDefault(ap => ap.GetType().IsAssignableTo(parameter.ParameterType));
+                var additionalParameter = additionalParametersList.FirstOrDefault(ap => ap.GetType().IsAssignableTo(parameter.ParameterType));
                 if (additionalParameter is not null)
+                {
                     value = additionalParameter;
+                    additionalParametersList.Remove(additionalParameter);
+                }
             }
 
             response.Add(value);
