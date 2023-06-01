@@ -41,16 +41,12 @@ public class ArgsParser : IArgsParser
     public CommandSurface ParseCommandSurface(ref string input)
     {
         var match = _commandSurfaceRegex.Match(input);
-
-        if (!match.Success) // TODO: This check is likely not necessary.
-            throw new ApplicationException($"Unexpected error in {nameof(ParseCommandSurface)}.");
-
         input = _commandSurfaceRegex.Replace(input, m => string.Empty);
 
         var typeIdentifier = match.Groups["TypeIdentifier"].Value;
         var methodIdentifier = match.Groups["MethodIdentifier"].Value;
 
-        var filtered = _commandSurfaces.Where(cs => true); // Create a separate IEnumerable and leave the original list alone.
+        var filtered = _commandSurfaces.Where(cs => true);
 
         if (!string.IsNullOrEmpty(typeIdentifier))
             filtered = filtered.Where(cs => cs.TypeAttribute is not null && string.Equals(cs.TypeAttribute.Name, typeIdentifier, StringComparison.OrdinalIgnoreCase));
@@ -60,10 +56,8 @@ public class ArgsParser : IArgsParser
 
         var results = filtered.ToList();
 
-        if (results.Count == 0)
-            throw new ApplicationException("Could not resolve any command surfaces.");
-        else if (results.Count > 1)
-            throw new ApplicationException("Could not resolve 1 command surface out of " + results.Count + " canditates.");
+        if (results.Count != 1)
+            throw new ApplicationException($"Failed to resolve a single command surface. {results.Count} found.");
 
         return results.First();
     }

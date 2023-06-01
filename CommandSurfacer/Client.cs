@@ -88,7 +88,7 @@ public class Client
             foreach (var method in methods)
             {
                 var methodAttribute = method.GetCustomAttribute<SurfaceAttribute>();
-                if (typeAttribute is not null || methodAttribute is not null) // We only want to add a command surface if it has been explicitly defined as a surface.
+                if (typeAttribute is not null || methodAttribute is not null)
                 {
                     _commandSurfaces.Add(new CommandSurface
                     {

@@ -6,33 +6,8 @@ public class StringConverter : IStringConverter
 
     public StringConverter()
     {
-        var allowedTrueValues = new string[] { "true", "yes", "y", "1" };
-        var allowedFalseValues = new string[] { "false", "no", "n", "0" };
-
         _converters = new Dictionary<Type, Func<string, object>>()
         {
-            {
-                typeof(bool), (input) =>
-                {
-                    if (allowedTrueValues.Contains(input, StringComparer.OrdinalIgnoreCase))
-                        return true;
-                    else if (allowedFalseValues.Contains(input, StringComparer.OrdinalIgnoreCase))
-                        return false;
-
-                    throw new NotImplementedException("If the regex did not match, this should never be firing");
-                }
-            },
-            {
-                typeof(bool?), (input) =>
-                {
-                    if (allowedTrueValues.Contains(input, StringComparer.OrdinalIgnoreCase))
-                        return true;
-                    else if (allowedFalseValues.Contains(input, StringComparer.OrdinalIgnoreCase))
-                        return false;
-
-                    throw new NotImplementedException("If the regex did not match, this should never be firing");
-                }
-            },
             { typeof(string), (input) => input },
             { typeof(byte), (input) => byte.Parse(input) },
             { typeof(byte?), (input) => byte.TryParse(input, out var outValue) ? outValue : null },
@@ -65,10 +40,10 @@ public class StringConverter : IStringConverter
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"An error occurrded converting '{input}' to type {targetType}", ex);
+                throw new InvalidOperationException($"Faled converting string '{input}' to type {targetType}", ex);
             }
         }
 
-        throw new InvalidOperationException($"Converting string to {targetType} is not supported.");
+        throw new InvalidOperationException($"Failed converting string to {targetType}. Not supported.");
     }
 }
