@@ -34,7 +34,8 @@ public class ArgsParser : IArgsParser
             .OrderByDescending(cs => cs.Length)
             .ToList();
 
-        _commandSurfaceRegex = new Regex($"^(?<TypeIdentifier>{string.Join('|', optionalTypeSurfaceIdentifiers)})? *(?<MethodIdentifier>{string.Join('|', optionalMethodSurfaceIdentifiers)})? *", RegexOptions.IgnoreCase);
+        var pattern = $"^(?<TypeIdentifier>{string.Join('|', optionalTypeSurfaceIdentifiers)})? *(?<MethodIdentifier>{string.Join('|', optionalMethodSurfaceIdentifiers)})? *";
+        _commandSurfaceRegex = new Regex(pattern, RegexOptions.IgnoreCase);
     }
 
     public CommandSurface ParseCommandSurface(ref string input)
