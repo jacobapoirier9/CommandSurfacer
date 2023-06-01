@@ -40,7 +40,7 @@ public class InteractiveConsole : IInteractiveConsole
             catch (Exception ex)
             {
                 if (_options.OnError is not null)
-                    _options.OnError(this, ex);
+                    _options.OnError(ex);
                 else
                     Console.WriteLine(ex);
             }

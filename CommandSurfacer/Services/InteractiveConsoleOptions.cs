@@ -8,5 +8,5 @@ public class InteractiveConsoleOptions
 
     public Func<string> PromptFunc { get; set; }
 
-    public Action<IInteractiveConsole, Exception> OnError { get; set; }
+    public Action<Exception> OnError { get; set; }
 }
