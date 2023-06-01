@@ -214,15 +214,28 @@ public class ArgsParser : IArgsParser
             var match = matches.ElementAtOrDefault(matchesIndex);
             if (match is not null)
             {
-                try 
-                { 
+                try
+                {
                     response[i] = _stringConverter.Convert(parameters[i].ParameterType, match.Value.Trim('\'', '"', ' '));
                     matchesIndex++;
+
+                    input = ReplaceFirstOccurance(input, match.Value, string.Empty).Trim('\'', '"', ' ');
                 }
                 catch { }
             }
         }
 
         return response.ToArray();
+    }
+
+    private static string ReplaceFirstOccurance(string input, string substring, string replacement)
+    {
+        var firstIndex = input.IndexOf(substring);
+
+        var stringStart = input.Substring(0, firstIndex);
+        var stringEnd = input.Substring(firstIndex + substring.Length);
+
+        var stringFinal = stringStart + replacement + stringEnd;
+        return stringFinal;
     }
 }

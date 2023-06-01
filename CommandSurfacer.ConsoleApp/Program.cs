@@ -23,11 +23,10 @@ internal static class Program
                 services.AddSingleton<TestService>();
                 services.AddSingleton<ServiceOne>();
             });
-
-        client.Run(args);
-
-
+        
+        await client.RunAsync(args);
     }
+
 }
 
 

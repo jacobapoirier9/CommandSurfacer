@@ -659,4 +659,130 @@ public class ArgsParserTests : BaseTests
         Assert.Null(result);
     }
     #endregion
+
+    #region Parse Method Parameters
+    [Fact]
+    public void ParseMethodParameters_NamedParametersMapCorrectly_InOrder()
+    {
+        var input = "--name 'Jake' --age 21";
+        var output = _argsParser.ParseMethodParameters(ref input, typeof(GetMethodParameters_Type).GetMethod(nameof(GetMethodParameters_Type.MethodOne)));
+
+        Assert.Collection(output,
+            param =>
+            {
+                var value = Assert.IsType<string>(param);
+                Assert.Equal("Jake", value);
+            },
+            param =>
+            {
+                var value = Assert.IsType<int>(param);
+                Assert.Equal(21, value);
+            });
+
+        Assert.Empty(input);
+    }
+
+    [Fact]
+    public void ParseMethodParameters_NamedParametersMapCorrectly_OutOfOrder()
+    {
+        var input = "--age 21 --name 'Jake'";
+        var output = _argsParser.ParseMethodParameters(ref input, typeof(GetMethodParameters_Type).GetMethod(nameof(GetMethodParameters_Type.MethodOne)));
+
+        Assert.Collection(output,
+            param =>
+            {
+                var value = Assert.IsType<string>(param);
+                Assert.Equal("Jake", value);
+            },
+            param =>
+            {
+                var value = Assert.IsType<int>(param);
+                Assert.Equal(21, value);
+            });
+
+        Assert.Empty(input);
+    }
+
+    [Fact]
+    public void ParseMethodParameters_AnonymousParametersMapCorrectly()
+    {
+        var input = "anon1 anon2";
+        var output = _argsParser.ParseMethodParameters(ref input, typeof(GetMethodParameters_Type).GetMethod(nameof(GetMethodParameters_Type.MethodTwo)));
+
+        Assert.Collection(output,
+            param =>
+            {
+                var value = Assert.IsType<string>(param);
+                Assert.Equal("anon1", param);
+            },
+            param =>
+            {
+                var value = Assert.IsType<string>(param);
+                Assert.Equal("anon2", param);
+            });
+
+        Assert.Empty(input);
+    }
+
+    [Fact]
+    public void ParseMethodParameters_NamedAndAnonymousParametersMapCorrectly()
+    {
+        var input = "--name 'Jake' 'D:\\file with spaces.txt' --age 21 anonymousstring";
+        var output = _argsParser.ParseMethodParameters(ref input, typeof(GetMethodParameters_Type).GetMethod(nameof(GetMethodParameters_Type.MethodThree)));
+
+        Assert.Collection(output,
+            param =>
+            {
+                var value = Assert.IsType<string>(param);
+                Assert.Equal("Jake", value);
+            },
+            param =>
+            {
+                var value = Assert.IsType<int>(param);
+                Assert.Equal(21, value);
+            },
+            param =>
+            {
+                var value = Assert.IsType<string>(param);
+                Assert.Equal("D:\\file with spaces.txt", value);
+            },
+            param =>
+            {
+                var value = Assert.IsType<string>(param);
+                Assert.Equal("anonymousstring", value);
+            });
+
+        Assert.Empty(input);
+    }
+
+    [Fact]
+    public void ParseMethodParameters_AllowsDuplicateValues()
+    {
+        var input = "anon anon";
+        var output = _argsParser.ParseMethodParameters(ref input, typeof(GetMethodParameters_Type).GetMethod(nameof(GetMethodParameters_Type.MethodTwo)));
+
+        Assert.Collection(output,
+            param =>
+            {
+                var value = Assert.IsType<string>(param);
+                Assert.Equal("anon", value);
+            },
+            param =>
+            {
+                var value = Assert.IsType<string>(param);
+                Assert.Equal("anon", value);
+            });
+
+        Assert.Empty(input);
+    }
+
+    public class GetMethodParameters_Type
+    {
+        public void MethodOne(string name, int age) { }
+
+        public void MethodTwo(string anonymous1, string anonymous2) { }
+
+        public void MethodThree(string name, int age, string anonymous1, string anonymous3) { }
+    }
+    #endregion
 }
