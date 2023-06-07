@@ -33,6 +33,8 @@ public class StringConverter : IStringConverter
                 }
             },
             { typeof(string), (input) => input },
+            { typeof(char), (input) => char.Parse(input) },
+            { typeof(char?), (input) => char.TryParse(input, out var outValue) ? outValue : null },
             { typeof(byte), (input) => byte.Parse(input) },
             { typeof(byte?), (input) => byte.TryParse(input, out var outValue) ? outValue : null },
             { typeof(short), (input) => short.Parse(input) },
