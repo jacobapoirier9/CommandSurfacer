@@ -20,9 +20,19 @@ internal static class Program
             .AddConsoleHelpMenu()
             .AddServices(services =>
             {
+                services.AddSingleton<TestService>();
             });
         
         await client.RunAsync(args);
+    }
+}
+
+public class TestService
+{
+    [Surface("test")]
+    public void Test(CommonSurfaceOptions common)
+    {
+
     }
 }
 

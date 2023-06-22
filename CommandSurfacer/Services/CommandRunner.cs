@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using CommandSurfacer.ConsoleApp;
+using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.ObjectiveC;
@@ -18,6 +19,9 @@ public class CommandRunner : ICommandRunner
 
     private object RunCommand(string input, params object[] additionalParameters)
     {
+        var common = _argsParser.ParseTypedValue(ref input, null, typeof(CommonSurfaceOptions));
+        additionalParameters = Utils.CombineArrays(additionalParameters, common);
+
         var target = _argsParser.ParseCommandSurface(ref input);
 
         var parameters = _argsParser.ParseMethodParameters(ref input, target.Method, additionalParameters);

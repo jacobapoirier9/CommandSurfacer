@@ -75,7 +75,7 @@ public class ArgsParser : IArgsParser
         var commandPrefixesPattern = string.Join('|', commandPrefixes.OrderByDescending(s => s.Length).Select(s => Regex.Escape(s)));
 
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>test-name)(?<Separator>[ :=]+(?<Value>false|true|yes|no|y|n|1|0)? *|$)
-        var pattern = @$"(?<= |^) *(?<Prefix>{commandPrefixesPattern})(?<Name>{surfaceAttribute.Name})(?<Separator>[ :=]+(?<Value>{allowedBooleanValuesPattern})? *|$)";
+        var pattern = @$"(?<= |^) *(?<Prefix>{commandPrefixesPattern})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+(?<Value>{allowedBooleanValuesPattern})? *|$)";
         var  regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
@@ -175,28 +175,29 @@ public class ArgsParser : IArgsParser
         var parameters = method.GetParameters();
         foreach (var parameter in parameters)
         {
-            var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(parameter.Name);
-            var value = GetSpecialValue(parameter.ParameterType) ?? ParseTypedValue(ref input, surfaceAttribute, parameter.ParameterType);
+            var value = default(object);
 
-            // If ParseTypedValue returns the default value, we do not want to add it to response.
-            // This will allow anonymous parameters to be inserted more accurately.
-            if (parameter.ParameterType.IsAssignableTo(typeof(IConvertible)))
+            var additionalParameter = additionalParametersList.FirstOrDefault(ap => ap.GetType().IsAssignableTo(parameter.ParameterType));
+            if (additionalParameter is not null)
             {
-                try
-                {
-                    if (object.Equals(value, Activator.CreateInstance(parameter.ParameterType)))
-                        value = null;
-                }
-                catch { } 
+                value = additionalParameter;
+                additionalParametersList.Remove(additionalParameter);
             }
-
-            if (value is null)
+            else
             {
-                var additionalParameter = additionalParametersList.FirstOrDefault(ap => ap.GetType().IsAssignableTo(parameter.ParameterType));
-                if (additionalParameter is not null)
+                var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(parameter.Name);
+                value = GetSpecialValue(parameter.ParameterType) ?? ParseTypedValue(ref input, surfaceAttribute, parameter.ParameterType);
+
+                // If ParseTypedValue returns the default value, we do not want to add it to response.
+                // This will allow anonymous parameters to be inserted more accurately.
+                if (parameter.ParameterType.IsAssignableTo(typeof(IConvertible)))
                 {
-                    value = additionalParameter;
-                    additionalParametersList.Remove(additionalParameter);
+                    try
+                    {
+                        if (object.Equals(value, Activator.CreateInstance(parameter.ParameterType)))
+                            value = null;
+                    }
+                    catch { }
                 }
             }
 
