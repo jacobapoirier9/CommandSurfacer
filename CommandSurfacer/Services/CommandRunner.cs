@@ -1,5 +1,4 @@
-﻿using CommandSurfacer.ConsoleApp;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.ObjectiveC;

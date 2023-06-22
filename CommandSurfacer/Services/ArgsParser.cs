@@ -220,21 +220,11 @@ public class ArgsParser : IArgsParser
                 response[i] = _stringConverter.Convert(parameters[i].ParameterType, match.Value.Trim('\'', '"', ' '));
                 matchesIndex++;
 
-                input = ReplaceFirstOccurance(input, match.Value, string.Empty).Trim('\'', '"', ' ');
+                input = Utils.ReplaceFirstOccurance(input, match.Value, string.Empty).Trim('\'', '"', ' ');
             }
         }
 
         return response.ToArray();
     }
 
-    private static string ReplaceFirstOccurance(string input, string substring, string replacement)
-    {
-        var firstIndex = input.IndexOf(substring);
-
-        var stringStart = input.Substring(0, firstIndex);
-        var stringEnd = input.Substring(firstIndex + substring.Length);
-
-        var stringFinal = stringStart + replacement + stringEnd;
-        return stringFinal;
-    }
 }

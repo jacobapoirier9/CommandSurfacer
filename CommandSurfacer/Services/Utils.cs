@@ -1,4 +1,4 @@
-﻿namespace CommandSurfacer.ConsoleApp;
+﻿namespace CommandSurfacer.Services;
 
 internal static class Utils
 {
@@ -15,4 +15,14 @@ internal static class Utils
         return combined;
     }
 
+    internal static string ReplaceFirstOccurance(string input, string substring, string replacement)
+    {
+        var firstIndex = input.IndexOf(substring);
+
+        var stringStart = input.Substring(0, firstIndex);
+        var stringEnd = input.Substring(firstIndex + substring.Length);
+
+        var stringFinal = stringStart + replacement + stringEnd;
+        return stringFinal;
+    }
 }
