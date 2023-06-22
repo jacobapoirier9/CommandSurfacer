@@ -3,16 +3,13 @@
 public class MemoryResponseProvider : IResponseProvider
 {
     private readonly IEnumerator<object> _enumerator;
-    public required IEnumerable<object> Responses { init { _enumerator = value.GetEnumerator(); } }
+    public MemoryResponseProvider(params object[] responses) { _enumerator = (responses as IEnumerable<object>).GetEnumerator(); }
 
 
     public T GetResponse<T>(string prompt) => (T)GetResponse(prompt, typeof(T));
 
     public object GetResponse(string prompt, Type targetType)
     {
-        if (_enumerator is null)
-            throw new NullReferenceException($"A value was not provided to the {nameof(Responses)} collection.");
-
         if (_enumerator.MoveNext())
         {
             var current = _enumerator.Current;
