@@ -63,7 +63,7 @@ public class ArgsParser : IArgsParser
         return results.First();
     }
 
-    public bool? ParsePresenceValue(ref string input, SurfaceAttribute surfaceAttribute, Type targetType)
+    public bool? ParsePresenceValue(ref string input, Type targetType, SurfaceAttribute surfaceAttribute = null)
     {
         var allowedTrueValues = new string[] { "true", "yes", "y", "1" };
         var allowedFalseValues = new string[] { "false", "no", "n", "0" };
@@ -123,13 +123,13 @@ public class ArgsParser : IArgsParser
         return null;
     }
 
-    public object ParseTypedValue(ref string input, SurfaceAttribute surfaceAttribute, Type targetType)
+    public object ParseTypedValue(ref string input, Type targetType, SurfaceAttribute surfaceAttribute = null)
     {
         if (_stringConverter.SupportsType(targetType))
         {
             if (targetType == typeof(bool) || targetType == typeof(bool?))
             {
-                var presenceValue = ParsePresenceValue(ref input, surfaceAttribute, targetType);
+                var presenceValue = ParsePresenceValue(ref input, targetType, surfaceAttribute);
                 return presenceValue;
             }
 
@@ -145,7 +145,7 @@ public class ArgsParser : IArgsParser
         foreach (var property in properties)
         {
             var attribute = property.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(property.Name);
-            var value = ParseTypedValue(ref input, attribute, property.PropertyType);
+            var value = ParseTypedValue(ref input, property.PropertyType, attribute);
             property.SetValue(instance, value);
         }
 
@@ -186,7 +186,7 @@ public class ArgsParser : IArgsParser
             else
             {
                 var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(parameter.Name);
-                value = GetSpecialValue(parameter.ParameterType) ?? ParseTypedValue(ref input, surfaceAttribute, parameter.ParameterType);
+                value = GetSpecialValue(parameter.ParameterType) ?? ParseTypedValue(ref input, parameter.ParameterType, surfaceAttribute);
 
                 // If ParseTypedValue returns the default value, we do not want to add it to response.
                 // This will allow anonymous parameters to be inserted more accurately.
