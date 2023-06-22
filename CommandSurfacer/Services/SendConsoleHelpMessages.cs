@@ -3,14 +3,14 @@ using System.Text;
 
 namespace CommandSurfacer.Services;
 
-public class ConsoleHelpMenu
+public class SendConsoleHelpMessages : ISendHelpMessages
 {
     private readonly List<CommandSurface> _commandSurfaces;
 
     private readonly IStringConverter _stringConverter;
     private readonly IServiceProvider _serviceProvider;
 
-    public ConsoleHelpMenu(List<CommandSurface> commandSurfaces, IStringConverter stringConverter, IServiceProvider serviceProvider)
+    public SendConsoleHelpMessages(List<CommandSurface> commandSurfaces, IStringConverter stringConverter, IServiceProvider serviceProvider)
     {
         _commandSurfaces = commandSurfaces;
 
@@ -89,7 +89,7 @@ public class ConsoleHelpMenu
     }
 
     [Surface("help")]
-    public void DisplayHelpMenu()
+    public void SendClientHelp()
     {
         var help = CreateCommandSurfacerHelp();
 

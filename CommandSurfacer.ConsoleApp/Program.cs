@@ -17,7 +17,7 @@ internal static class Program
             {
                 options.Banner = "Welcome to Jake's custom CLI";
             })
-            .AddConsoleHelpMenu()
+            .AddConsoleHelp()
             .AddServices(services =>
             {
                 services.AddSingleton<TestService>();

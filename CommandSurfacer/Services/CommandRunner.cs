@@ -10,6 +10,7 @@ public class CommandRunner : ICommandRunner
 {
     private readonly IArgsParser _argsParser;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ISendHelpMessages _sendHelpMessages;
 
     public CommandRunner(IArgsParser argsParser, IServiceProvider serviceProvider)
     {
@@ -19,7 +20,10 @@ public class CommandRunner : ICommandRunner
 
     private object RunCommand(string input, params object[] additionalParameters)
     {
-        var common = _argsParser.ParseTypedValue(ref input, null, typeof(CommonSurfaceOptions));
+        var common = (CommonSurfaceOptions)_argsParser.ParseTypedValue(ref input, null, typeof(CommonSurfaceOptions));
+        if (common.ProvidedHelpSwitch && _sendHelpMessages is not null)
+            _sendHelpMessages.SendClientHelp();
+
         additionalParameters = Utils.CombineArrays(additionalParameters, common);
 
         var target = _argsParser.ParseCommandSurface(ref input);

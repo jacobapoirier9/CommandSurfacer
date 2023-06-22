@@ -25,7 +25,7 @@ public class InteractiveConsole : IInteractiveConsole
     public void BeginInteractiveMode() => BeginInteractiveModeAsync().GetAwaiter().GetResult();
     public async Task BeginInteractiveModeAsync()
     {
-        if (_options.Banner is not null)
+        if (_options?.Banner is not null)
             Console.WriteLine(_options.Banner);
 
         while (_continue)

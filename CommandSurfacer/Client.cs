@@ -49,9 +49,9 @@ public class Client
         return this;
     }
 
-    public Client AddConsoleHelpMenu()
+    public Client AddConsoleHelp()
     {
-        _serviceCollection.AddSingleton<ConsoleHelpMenu>();
+        _serviceCollection.AddSingleton<ISendHelpMessages, SendConsoleHelpMessages>();
         return this;
     }
 
@@ -145,10 +145,10 @@ public class Client
 
         if (string.IsNullOrEmpty(input))
         {
-            var interactiveConsoleOptions = _serviceProvider.GetService<IInteractiveConsole>();
-            if (interactiveConsoleOptions is not null)
+            var interactiveConsole = _serviceProvider.GetService<IInteractiveConsole>();
+            if (interactiveConsole is not null)
             {
-                await interactiveConsoleOptions.BeginInteractiveModeAsync();
+                await interactiveConsole.BeginInteractiveModeAsync();
                 return default;
             }
         }
