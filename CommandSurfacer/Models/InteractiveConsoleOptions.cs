@@ -1,4 +1,4 @@
-﻿namespace CommandSurfacer.Services;
+﻿namespace CommandSurfacer.Models;
 
 public class InteractiveConsoleOptions
 {

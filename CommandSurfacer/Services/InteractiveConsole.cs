@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using CommandSurfacer.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CommandSurfacer.Services;
 

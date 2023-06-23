@@ -1,4 +1,5 @@
-﻿using CommandSurfacer.Services;
+﻿using CommandSurfacer.Models;
+using CommandSurfacer.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Reflection;
