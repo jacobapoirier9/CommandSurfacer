@@ -103,46 +103,22 @@ public class Client
         }
     }
 
-    private void FinalizeClientBuild()
+    public Client Run(string[] args, params object[] additionalParameters) => Run<Client>(string.Join(' ', args), additionalParameters);
+    public T Run<T>(string[] args, params object[] additionalParameters) => Run<T>(string.Join(' ', args), additionalParameters);
+    public Client Run(string input, params object[] additionalParameters) => Run<Client>(input, additionalParameters);
+    public T Run<T>(string input, params object[] additionalParameters) => RunFinalAsync<T>(input, additionalParameters).GetAwaiter().GetResult();
+
+    public async Task<object> RunAsync(string[] args, params object[] additionalParameters) => await RunAsync<object>(string.Join(' ', args), additionalParameters);
+    public async Task<T> RunAsync<T>(string[] args, params object[] additionalParameters) => await RunAsync<T>(string.Join(' ', args), additionalParameters);
+    public async Task<object> RunAsync(string input, params object[] additionalParameters) => await RunAsync<object>(input, additionalParameters);
+    public async Task<T> RunAsync<T>(string input, params object[] additionalParameters) => await RunFinalAsync<T>(input, additionalParameters);
+
+    private async Task<T> RunFinalAsync<T>(string input, params object[] additionalParameters)
     {
         AddInternalServices();
         BuildCommandSurfaces();
 
         _serviceProvider = _serviceCollection.BuildServiceProvider();
-    }
-
-    public Client Run(string[] args, params object[] additionalParameters) => Run<Client>(string.Join(' ', args), additionalParameters);
-    public T Run<T>(string[] args, params object[] additionalParameters) => Run<T>(string.Join(' ', args), additionalParameters);
-    public Client Run(string input, params object[] additionalParameters) => Run<Client>(input, additionalParameters);
-    public T Run<T>(string input, params object[] additionalParameters)
-    {
-        FinalizeClientBuild();
-
-        if (string.IsNullOrEmpty(input))
-        {
-            var interactiveConsoleOptions = _serviceProvider.GetService<IInteractiveConsole>();
-            if (interactiveConsoleOptions is not null)
-            {
-                interactiveConsoleOptions.BeginInteractiveMode();
-                return default;
-            }
-        }
-
-        var commandRunner = _serviceProvider.GetRequiredService<ICommandRunner>();
-        var result = commandRunner.Run<T>(input, additionalParameters);
-
-        if (typeof(T) == typeof(Client))
-            return (T)(object)this;
-
-        return result;
-    }
-
-    public async Task<object> RunAsync(string[] args, params object[] additionalParameters) => await RunAsync<object>(string.Join(' ', args), additionalParameters);
-    public async Task<T> RunAsync<T>(string[] args, params object[] additionalParameters) => await RunAsync<T>(string.Join(' ', args), additionalParameters);
-    public async Task<object> RunAsync(string input, params object[] additionalParameters) => await RunAsync<object>(input, additionalParameters);
-    public async Task<T> RunAsync<T>(string input, params object[] additionalParameters)
-    {
-        FinalizeClientBuild();
 
         if (string.IsNullOrEmpty(input))
         {
@@ -150,7 +126,7 @@ public class Client
             if (interactiveConsole is not null)
             {
                 await interactiveConsole.BeginInteractiveModeAsync();
-                return default;
+                return await Task.FromResult<T>(default(T));
             }
         }
 
