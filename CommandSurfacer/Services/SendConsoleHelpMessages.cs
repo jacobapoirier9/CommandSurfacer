@@ -21,14 +21,14 @@ public class SendConsoleHelpMessages : ISendHelpMessages
 
     private CommandSurfacerHelp CreateCommandSurfacerHelp()
     {
-        var methodLevel = _commandSurfaces.Where(cs => cs.TypeAttribute is null && !cs.MethodAttribute.ExcludeFromHelp.IsTrue())
-            .OrderByDescending(cs => cs.MethodAttribute.Name)
+        var methodLevel = _commandSurfaces.Where(cs => cs.Group is null && !cs.Surface.ExcludeFromHelp.IsTrue())
+            .OrderByDescending(cs => cs.Surface.Name)
             .ToList();
 
-        var typeLevel = _commandSurfaces.Where(cs => cs.TypeAttribute is not null && !cs.TypeAttribute.ExcludeFromHelp.IsTrue())
-            .OrderByDescending(cs => cs.TypeAttribute.Name)
-            .ThenByDescending(cs => cs.MethodAttribute.Name)
-            .GroupBy(cs => cs.TypeAttribute)
+        var typeLevel = _commandSurfaces.Where(cs => cs.Group is not null && !cs.Group.ExcludeFromHelp.IsTrue())
+            .OrderByDescending(cs => cs.Group.Name)
+            .ThenByDescending(cs => cs.Surface.Name)
+            .GroupBy(cs => cs.Group)
             .ToList();
 
         var result = new CommandSurfacerHelp
@@ -100,11 +100,11 @@ public class SendConsoleHelpMessages : ISendHelpMessages
 
         foreach (var surface in help.MethodLevelIdentifiedSurfaces)
         {
-            builder.Append(surface.MethodAttribute.Name);
-            if (!string.IsNullOrEmpty(surface.MethodAttribute.HelpText))
+            builder.Append(surface.Surface.Name);
+            if (!string.IsNullOrEmpty(surface.Surface.HelpText))
             {
                 builder.Append("  -  ");
-                builder.Append(surface.MethodAttribute.HelpText);
+                builder.Append(surface.Surface.HelpText);
             }
 
             builder.AppendLine();
@@ -127,11 +127,11 @@ public class SendConsoleHelpMessages : ISendHelpMessages
             foreach (var surface in group)
             {
                 builder.Append("  ");
-                builder.Append(surface.MethodAttribute.Name);
-                if (!string.IsNullOrEmpty(surface.MethodAttribute.HelpText))
+                builder.Append(surface.Surface.Name);
+                if (!string.IsNullOrEmpty(surface.Surface.HelpText))
                 {
                     builder.Append("  -  ");
-                    builder.Append(surface.MethodAttribute.HelpText);
+                    builder.Append(surface.Surface.HelpText);
                 }
 
                 builder.AppendLine();

@@ -25,12 +25,12 @@ public class ArgsParser : IArgsParser
         _stringConverter = stringConverter;
         _serviceProvider = serviceProvider;
 
-        var optionalTypeSurfaceIdentifiers = _commandSurfaces.Select(cs => cs.TypeAttribute?.Name)
+        var optionalTypeSurfaceIdentifiers = _commandSurfaces.Select(cs => cs.Group?.Name)
             .Where(cs => cs is not null)
             .OrderByDescending(cs => cs.Length)
             .ToList();
 
-        var optionalMethodSurfaceIdentifiers = _commandSurfaces.Select(cs => cs.MethodAttribute?.Name)
+        var optionalMethodSurfaceIdentifiers = _commandSurfaces.Select(cs => cs.Surface?.Name)
             .Where(cs => cs is not null)
             .OrderByDescending(cs => cs.Length)
             .ToList();
@@ -50,10 +50,10 @@ public class ArgsParser : IArgsParser
         var filtered = _commandSurfaces.Where(cs => true);
 
         if (!string.IsNullOrEmpty(typeIdentifier))
-            filtered = filtered.Where(cs => cs.TypeAttribute is not null && string.Equals(cs.TypeAttribute.Name, typeIdentifier, StringComparison.OrdinalIgnoreCase));
+            filtered = filtered.Where(cs => cs.Group is not null && string.Equals(cs.Group.Name, typeIdentifier, StringComparison.OrdinalIgnoreCase));
 
         if (!string.IsNullOrEmpty(methodIdentifier))
-            filtered = filtered.Where(cs => cs.MethodAttribute is not null && string.Equals(cs.MethodAttribute.Name, methodIdentifier, StringComparison.OrdinalIgnoreCase));
+            filtered = filtered.Where(cs => cs.Surface is not null && string.Equals(cs.Surface.Name, methodIdentifier, StringComparison.OrdinalIgnoreCase));
 
         var results = filtered.ToList();
 

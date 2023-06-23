@@ -85,7 +85,7 @@ public class Client
                 .Where(m => m.IsPublic && m.DeclaringType == implementationType && !m.IsSpecialName)
                 .ToList();
 
-            var typeAttribute = implementationType.GetCustomAttribute<SurfaceAttribute>();
+            var typeAttribute = implementationType.GetCustomAttribute<GroupAttribute>();
             foreach (var method in methods)
             {
                 var methodAttribute = method.GetCustomAttribute<SurfaceAttribute>();
@@ -94,9 +94,9 @@ public class Client
                     _commandSurfaces.Add(new CommandSurface
                     {
                         Type = service.ServiceType,
-                        TypeAttribute = typeAttribute,
+                        Group = typeAttribute,
                         Method = method,
-                        MethodAttribute = methodAttribute
+                        Surface = methodAttribute
                     });
                 }
             }

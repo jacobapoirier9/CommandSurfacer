@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Reflection;
+using System.Text.RegularExpressions;
+using Group = CommandSurfacer.GroupAttribute;
 
 namespace CommandSurfacer.Tests;
 
@@ -25,46 +27,46 @@ public class CommandSurfacerTestFixture : IDisposable
                     new CommandSurface
                     {
                         Type = typeof(SampleServiceOne),
-                        TypeAttribute = new SurfaceAttribute("sample-one"),
+                        Group = new Group("sample-one"),
                         Method = typeof(SampleServiceOne).GetMethod(nameof(SampleServiceOne.MethodOne)),
-                        MethodAttribute= new SurfaceAttribute("one")
+                        Surface= new SurfaceAttribute("one")
                     },
                     new CommandSurface
                     {
                         Type = typeof(SampleServiceOne),
-                        TypeAttribute = new SurfaceAttribute("sample-one"),
+                        Group = new Group("sample-one"),
                         Method = typeof(SampleServiceOne).GetMethod(nameof(SampleServiceOne.MethodTwo)),
-                        MethodAttribute= new SurfaceAttribute("two")
+                        Surface= new SurfaceAttribute("two")
                     },
                     new CommandSurface
                     {
                         Type = typeof(SampleServiceOne),
-                        TypeAttribute = new SurfaceAttribute("sample-one"),
+                        Group = new Group("sample-one"),
                         Method = typeof(SampleServiceOne).GetMethod(nameof(SampleServiceOne.MethodThree)),
-                        MethodAttribute= new SurfaceAttribute("three")
+                        Surface= new SurfaceAttribute("three")
                     },
 
                     new CommandSurface
                     {
                         Type = typeof(SampleServiceTwo),
-                        TypeAttribute = new SurfaceAttribute("sample-two"),
+                        Group = new Group("sample-two"),
                         Method = typeof(SampleServiceTwo).GetMethod(nameof(SampleServiceTwo.MethodThree)),
-                        MethodAttribute= new SurfaceAttribute("three")
+                        Surface= new SurfaceAttribute("three")
                     },
                     new CommandSurface
                     {
                         Type = typeof(SampleServiceTwo),
-                        TypeAttribute = new SurfaceAttribute("sample-two"),
+                        Group = new Group("sample-two"),
                         Method = typeof(SampleServiceTwo).GetMethod(nameof(SampleServiceTwo.MethodFour)),
-                        MethodAttribute= new SurfaceAttribute("four")
+                        Surface= new SurfaceAttribute("four")
                     },
 
                     new CommandSurface
                     {
                         Type = typeof(SampleServiceThree),
-                        TypeAttribute = new SurfaceAttribute("sample-three"),
+                        Group = new Group("sample-three"),
                         Method = typeof(SampleServiceThree).GetMethod(nameof(SampleServiceThree.MethodFive)),
-                        MethodAttribute= new SurfaceAttribute("five")
+                        Surface= new SurfaceAttribute("five")
                     }
                 };
 
@@ -86,7 +88,7 @@ public class CommandSurfacerTestFixture : IDisposable
     public void Dispose() => _appHost?.Dispose();
 }
 
-[Surface("sample-one")]
+[CommandSurfacer.Group("sample-one")]
 public class SampleServiceOne
 {
     [Surface("one")]
@@ -99,7 +101,7 @@ public class SampleServiceOne
     public void MethodThree() { }
 }
 
-[Surface("sample-two")]
+[CommandSurfacer.Group("sample-two")]
 public class SampleServiceTwo
 {
     [Surface("three")]
@@ -109,7 +111,7 @@ public class SampleServiceTwo
     public void MethodFour() { }
 }
 
-[Surface("sample-five")]
+[CommandSurfacer.Group("sample-five")]
 public class SampleServiceThree
 {
     [Surface("five")]

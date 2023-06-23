@@ -21,10 +21,10 @@ public class ArgsParserTests : BaseTests
 
         Assert.Empty(input);
 
-        Assert.Equal("sample-one", surface.TypeAttribute.Name);
+        Assert.Equal("sample-one", surface.Group.Name);
         Assert.Equal(nameof(SampleServiceOne), surface.Type.Name);
 
-        Assert.Equal("one", surface.MethodAttribute.Name);
+        Assert.Equal("one", surface.Surface.Name);
         Assert.Equal(nameof(SampleServiceOne.MethodOne), surface.Method.Name);
     }
 
@@ -45,10 +45,10 @@ public class ArgsParserTests : BaseTests
 
         Assert.Empty(input);
 
-        Assert.Equal("sample-two", surface.TypeAttribute.Name);
+        Assert.Equal("sample-two", surface.Group.Name);
         Assert.Equal(nameof(SampleServiceTwo), surface.Type.Name);
 
-        Assert.Equal("three", surface.MethodAttribute.Name);
+        Assert.Equal("three", surface.Surface.Name);
         Assert.Equal(nameof(SampleServiceTwo.MethodThree), surface.Method.Name);
     }
 
@@ -60,10 +60,10 @@ public class ArgsParserTests : BaseTests
 
         Assert.Empty(input);
 
-        Assert.Equal("sample-three", surface.TypeAttribute.Name);
+        Assert.Equal("sample-three", surface.Group.Name);
         Assert.Equal(nameof(SampleServiceThree), surface.Type.Name);
 
-        Assert.Equal("five", surface.MethodAttribute.Name);
+        Assert.Equal("five", surface.Surface.Name);
         Assert.Equal(nameof(SampleServiceThree.MethodFive), surface.Method.Name);
     }
     #endregion
