@@ -16,7 +16,7 @@ public class MemoryResponseProvider : IResponseProvider
             var currentType = current.GetType();
 
             if (currentType != targetType)
-                throw new ApplicationException($"Expected type {targetType.Name} but got {currentType.Name}");
+                throw new InvalidCastException($"Expected type {targetType.Name} but got {currentType.Name}");
 
             return current;
         }

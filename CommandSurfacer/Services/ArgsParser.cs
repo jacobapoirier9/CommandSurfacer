@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Data;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -25,17 +25,17 @@ public class ArgsParser : IArgsParser
         _stringConverter = stringConverter;
         _serviceProvider = serviceProvider;
 
-        var optionalTypeSurfaceIdentifiers = _commandSurfaces.Select(cs => cs.Group?.Name)
+        var groupNames = _commandSurfaces.Select(cs => cs.Group?.Name)
             .Where(cs => cs is not null)
             .OrderByDescending(cs => cs.Length)
             .ToList();
 
-        var optionalMethodSurfaceIdentifiers = _commandSurfaces.Select(cs => cs.Surface?.Name)
+        var surfaceNames = _commandSurfaces.Select(cs => cs.Surface?.Name)
             .Where(cs => cs is not null)
             .OrderByDescending(cs => cs.Length)
             .ToList();
 
-        var pattern = $"^(?<TypeIdentifier>{string.Join('|', optionalTypeSurfaceIdentifiers)})? *(?<MethodIdentifier>{string.Join('|', optionalMethodSurfaceIdentifiers)})? *";
+        var pattern = $"^(?<TypeIdentifier>{string.Join('|', groupNames)})? *(?<MethodIdentifier>{string.Join('|', surfaceNames)})? *";
         _commandSurfaceRegex = new Regex(pattern, RegexOptions.IgnoreCase);
     }
 
@@ -58,7 +58,7 @@ public class ArgsParser : IArgsParser
         var results = filtered.ToList();
 
         if (results.Count != 1)
-            throw new ApplicationException($"Failed to resolve a single command surface. {results.Count} found.");
+            throw new ResolutionException(results.Count, _commandSurfaces.Count);
 
         return results.First();
     }
@@ -76,7 +76,7 @@ public class ArgsParser : IArgsParser
 
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>test-name)(?<Separator>[ :=]+(?<Value>false|true|yes|no|y|n|1|0)? *|$)
         var pattern = @$"(?<= |^) *(?<Prefix>{commandPrefixesPattern})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+(?<Value>{allowedBooleanValuesPattern})? *|$)";
-        var  regex = new Regex(pattern, RegexOptions.IgnoreCase);
+        var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
         if (match.Success)
@@ -100,7 +100,7 @@ public class ArgsParser : IArgsParser
         var commandPrefixesPattern = string.Join('|', commandPrefixes.OrderByDescending(s => s.Length).Select(s => Regex.Escape(s)));
 
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>test-name)(?<Separator>[ :=]+)(?<Value>[\w:\\.-{}]+|"[\w\s:\\.-{}',]*"|'[\w\s:\\.-{}",]*') *|$
-        var pattern = $@"(?<= |^) *(?<Prefix>{commandPrefixesPattern})(?<Name>{surfaceAttribute.Name})(?<Separator>[ :=]+)(?<Value>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}',]*""|'[\w\s:\\.-{{}}"",]*') *|$";
+        var pattern = $@"(?<= |^) *(?<Prefix>{commandPrefixesPattern})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?<Value>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}',]*""|'[\w\s:\\.-{{}}"",]*') *|$";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
@@ -226,5 +226,4 @@ public class ArgsParser : IArgsParser
 
         return response.ToArray();
     }
-
 }

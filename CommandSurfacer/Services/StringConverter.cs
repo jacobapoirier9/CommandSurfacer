@@ -72,7 +72,7 @@ public class StringConverter : IStringConverter
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Faled converting string '{input}' to type {targetType}", ex);
+                throw new InvalidCastException($"Failed converting string '{input}' to {targetType}", ex);
             }
         }
 

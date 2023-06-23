@@ -77,6 +77,7 @@ public class Client
     {
         _commandSurfaces.Clear();
 
+        var keys = new List<string>();
         foreach (var service in _serviceCollection)
         {
             var implementationType = service.ImplementationType ?? service.ImplementationInstance.GetType();
@@ -85,18 +86,24 @@ public class Client
                 .Where(m => m.IsPublic && m.DeclaringType == implementationType && !m.IsSpecialName)
                 .ToList();
 
-            var typeAttribute = implementationType.GetCustomAttribute<GroupAttribute>();
+            var groupAttribute = implementationType.GetCustomAttribute<GroupAttribute>();
             foreach (var method in methods)
             {
-                var methodAttribute = method.GetCustomAttribute<SurfaceAttribute>();
-                if (typeAttribute is not null || methodAttribute is not null)
+                var surfaceAttribute = method.GetCustomAttribute<SurfaceAttribute>();
+                if (groupAttribute is not null || surfaceAttribute is not null)
                 {
+                    var key = string.Join(' ', groupAttribute?.Name, surfaceAttribute.Name).Trim(' ');
+                    if (keys.Contains(key))
+                        throw new InvalidOperationException($"Surface {key} has already been added");
+
+                    keys.Add(key);
+
                     _commandSurfaces.Add(new CommandSurface
                     {
                         Type = service.ServiceType,
-                        Group = typeAttribute,
+                        Group = groupAttribute,
                         Method = method,
-                        Surface = methodAttribute
+                        Surface = surfaceAttribute
                     });
                 }
             }

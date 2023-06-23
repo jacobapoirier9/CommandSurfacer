@@ -20,11 +20,11 @@ public class CommandRunner : ICommandRunner
 
     private object RunCommand(string input, params object[] additionalParameters)
     {
-        var common = _argsParser.ParseTypedValue<CommonSurfaceOptions>(ref input);
-        if (common.ProvidedHelpSwitch && _sendHelpMessages is not null)
+        var options = _argsParser.ParseTypedValue<CommonSurfaceOptions>(ref input);
+        if (options.ProvidedHelpSwitch && _sendHelpMessages is not null)
             _sendHelpMessages.SendClientHelp();
 
-        additionalParameters = Utils.CombineArrays(additionalParameters, common);
+        additionalParameters = Utils.CombineArrays(additionalParameters, options);
 
         var target = _argsParser.ParseCommandSurface(ref input);
 
