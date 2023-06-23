@@ -21,11 +21,11 @@ public class SendConsoleHelpMessages : ISendHelpMessages
 
     private CommandSurfacerHelp CreateCommandSurfacerHelp()
     {
-        var methodLevel = _commandSurfaces.Where(cs => cs.Group is null && !cs.Surface.ExcludeFromHelp.IsTrue())
+        var groups = _commandSurfaces.Where(cs => cs.Group is null && !cs.Surface.ExcludeFromHelp.IsTrue())
             .OrderByDescending(cs => cs.Surface.Name)
             .ToList();
 
-        var typeLevel = _commandSurfaces.Where(cs => cs.Group is not null && !cs.Group.ExcludeFromHelp.IsTrue())
+        var surfaces = _commandSurfaces.Where(cs => cs.Group is not null && !cs.Group.ExcludeFromHelp.IsTrue())
             .OrderByDescending(cs => cs.Group.Name)
             .ThenByDescending(cs => cs.Surface.Name)
             .GroupBy(cs => cs.Group)
@@ -33,8 +33,8 @@ public class SendConsoleHelpMessages : ISendHelpMessages
 
         var result = new CommandSurfacerHelp
         {
-            MethodLevelIdentifiedSurfaces = methodLevel,
-            TypeLevelIdentifiedSurfaces = typeLevel
+            Surfaces = groups,
+            Groups = surfaces
         };
 
         return result;
@@ -95,10 +95,9 @@ public class SendConsoleHelpMessages : ISendHelpMessages
         var help = CreateCommandSurfacerHelp();
 
         var builder = new StringBuilder();
-
         builder.AppendLine();
 
-        foreach (var surface in help.MethodLevelIdentifiedSurfaces)
+        foreach (var surface in help.Surfaces)
         {
             builder.Append(surface.Surface.Name);
             if (!string.IsNullOrEmpty(surface.Surface.HelpText))
@@ -113,7 +112,7 @@ public class SendConsoleHelpMessages : ISendHelpMessages
 
         builder.AppendLine();
 
-        foreach (var group in help.TypeLevelIdentifiedSurfaces)
+        foreach (var group in help.Groups)
         {
             builder.Append(group.Key.Name);
             if (!string.IsNullOrEmpty(group.Key.HelpText))
