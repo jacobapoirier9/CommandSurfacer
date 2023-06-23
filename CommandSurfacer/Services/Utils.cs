@@ -25,4 +25,6 @@ internal static class Utils
         var stringFinal = stringStart + replacement + stringEnd;
         return stringFinal;
     }
+
+    public static bool IsTrue(this bool? value) => value.HasValue && value.Value;
 }

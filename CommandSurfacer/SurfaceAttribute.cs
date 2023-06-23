@@ -11,4 +11,6 @@ public class SurfaceAttribute : Attribute
     }
 
     public string HelpText { get; init; }
+
+    public bool? ExcludeFromHelp { get; set; }
 }

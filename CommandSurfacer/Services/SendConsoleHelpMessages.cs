@@ -20,11 +20,11 @@ public class SendConsoleHelpMessages : ISendHelpMessages
 
     private CommandSurfacerHelp CreateCommandSurfacerHelp()
     {
-        var methodLevel = _commandSurfaces.Where(cs => cs.TypeAttribute is null)
+        var methodLevel = _commandSurfaces.Where(cs => cs.TypeAttribute is null && !cs.MethodAttribute.ExcludeFromHelp.IsTrue())
             .OrderByDescending(cs => cs.MethodAttribute.Name)
             .ToList();
 
-        var typeLevel = _commandSurfaces.Where(cs => cs.TypeAttribute is not null)
+        var typeLevel = _commandSurfaces.Where(cs => cs.TypeAttribute is not null && !cs.TypeAttribute.ExcludeFromHelp.IsTrue())
             .OrderByDescending(cs => cs.TypeAttribute.Name)
             .ThenByDescending(cs => cs.MethodAttribute.Name)
             .GroupBy(cs => cs.TypeAttribute)
