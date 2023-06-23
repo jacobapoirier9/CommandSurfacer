@@ -1,5 +1,6 @@
 ﻿namespace CommandSurfacer;
 
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Parameter | AttributeTargets.Property | AttributeTargets.Class)]
 public class SurfaceAttribute : Attribute
 {
     public string Name { get; private init; }
