@@ -26,7 +26,6 @@ internal static class Program
             });
         
         await client.RunAsync(args);
-        var t = new MemoryResponseProvider("hello");
     }
 }
 

@@ -30,18 +30,12 @@ public class CommandRunner : ICommandRunner
             {
                 var group = _argsParser.ResolveGroupAttributeOrDefault(input);
                 if (group is not null)
-                {
                     _sendHelpMessages.SendClientHelp(group);
-                }
                 else
-                {
                     _sendHelpMessages.SendClientHelp();
-                }
             }
             else
-            {
                 _sendHelpMessages.SendClientHelp(surface);
-            }
 
             return default;
         }
