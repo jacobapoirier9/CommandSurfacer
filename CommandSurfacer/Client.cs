@@ -1,4 +1,5 @@
-﻿using CommandSurfacer.Services;
+﻿using CommandSurfacer.Models;
+using CommandSurfacer.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Reflection;
@@ -49,9 +50,9 @@ public class Client
         return this;
     }
 
-    public Client AddConsoleHelpMenu()
+    public Client AddConsoleHelp()
     {
-        _serviceCollection.AddSingleton<ConsoleHelpMenu>();
+        _serviceCollection.AddSingleton<ISendHelpMessages, SendConsoleHelpMessages>();
         return this;
     }
 
@@ -76,6 +77,7 @@ public class Client
     {
         _commandSurfaces.Clear();
 
+        var keys = new List<string>();
         foreach (var service in _serviceCollection)
         {
             var implementationType = service.ImplementationType ?? service.ImplementationInstance.GetType();
@@ -84,72 +86,54 @@ public class Client
                 .Where(m => m.IsPublic && m.DeclaringType == implementationType && !m.IsSpecialName)
                 .ToList();
 
-            var typeAttribute = implementationType.GetCustomAttribute<SurfaceAttribute>();
+            var groupAttribute = implementationType.GetCustomAttribute<GroupAttribute>();
             foreach (var method in methods)
             {
-                var methodAttribute = method.GetCustomAttribute<SurfaceAttribute>();
-                if (typeAttribute is not null || methodAttribute is not null)
+                var surfaceAttribute = method.GetCustomAttribute<SurfaceAttribute>();
+                if (groupAttribute is not null || surfaceAttribute is not null)
                 {
+                    var key = string.Join(' ', groupAttribute?.Name, surfaceAttribute.Name).Trim(' ');
+                    if (keys.Contains(key))
+                        throw new InvalidOperationException($"Surface {key} has already been added");
+
+                    keys.Add(key);
+
                     _commandSurfaces.Add(new CommandSurface
                     {
                         Type = service.ServiceType,
-                        TypeAttribute = typeAttribute,
+                        Group = groupAttribute,
                         Method = method,
-                        MethodAttribute = methodAttribute
+                        Surface = surfaceAttribute
                     });
                 }
             }
         }
     }
 
-    private void FinalizeClientBuild()
+    public Client Run(string[] args, params object[] additionalParameters) => Run<Client>(string.Join(' ', args), additionalParameters);
+    public T Run<T>(string[] args, params object[] additionalParameters) => Run<T>(string.Join(' ', args), additionalParameters);
+    public Client Run(string input, params object[] additionalParameters) => Run<Client>(input, additionalParameters);
+    public T Run<T>(string input, params object[] additionalParameters) => RunFinalAsync<T>(input, additionalParameters).GetAwaiter().GetResult();
+
+    public async Task<object> RunAsync(string[] args, params object[] additionalParameters) => await RunAsync<object>(string.Join(' ', args), additionalParameters);
+    public async Task<T> RunAsync<T>(string[] args, params object[] additionalParameters) => await RunAsync<T>(string.Join(' ', args), additionalParameters);
+    public async Task<object> RunAsync(string input, params object[] additionalParameters) => await RunAsync<object>(input, additionalParameters);
+    public async Task<T> RunAsync<T>(string input, params object[] additionalParameters) => await RunFinalAsync<T>(input, additionalParameters);
+
+    private async Task<T> RunFinalAsync<T>(string input, params object[] additionalParameters)
     {
         AddInternalServices();
         BuildCommandSurfaces();
 
         _serviceProvider = _serviceCollection.BuildServiceProvider();
-    }
-
-    public Client Run(string[] args, params object[] additionalParameters) => Run<Client>(string.Join(' ', args), additionalParameters);
-    public T Run<T>(string[] args, params object[] additionalParameters) => Run<T>(string.Join(' ', args), additionalParameters);
-    public Client Run(string input, params object[] additionalParameters) => Run<Client>(input, additionalParameters);
-    public T Run<T>(string input, params object[] additionalParameters)
-    {
-        FinalizeClientBuild();
 
         if (string.IsNullOrEmpty(input))
         {
-            var interactiveConsoleOptions = _serviceProvider.GetService<IInteractiveConsole>();
-            if (interactiveConsoleOptions is not null)
+            var interactiveConsole = _serviceProvider.GetService<IInteractiveConsole>();
+            if (interactiveConsole is not null)
             {
-                interactiveConsoleOptions.BeginInteractiveMode();
-                return default;
-            }
-        }
-
-        var commandRunner = _serviceProvider.GetRequiredService<ICommandRunner>();
-        var result = commandRunner.Run<T>(input, additionalParameters);
-
-        if (typeof(T) == typeof(Client))
-            return (T)(object)this;
-
-        return result;
-    }
-
-    public async Task<object> RunAsync(string[] args, params object[] additionalParameters) => await RunAsync<object>(string.Join(' ', args), additionalParameters);
-    public async Task<T> RunAsync<T>(string[] args, params object[] additionalParameters) => await RunAsync<T>(string.Join(' ', args), additionalParameters);
-    public async Task<object> RunAsync(string input, params object[] additionalParameters) => await RunAsync<object>(input, additionalParameters);
-    public async Task<T> RunAsync<T>(string input, params object[] additionalParameters)
-    {
-        FinalizeClientBuild();
-
-        if (string.IsNullOrEmpty(input))
-        {
-            var interactiveConsoleOptions = _serviceProvider.GetService<IInteractiveConsole>();
-            if (interactiveConsoleOptions is not null)
-            {
-                await interactiveConsoleOptions.BeginInteractiveModeAsync();
-                return default;
+                await interactiveConsole.BeginInteractiveModeAsync();
+                return await Task.FromResult<T>(default(T));
             }
         }
 

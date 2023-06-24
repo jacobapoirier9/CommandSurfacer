@@ -1,4 +1,5 @@
-﻿using CommandSurfacer.Services;
+﻿using CommandSurfacer.Models;
+using CommandSurfacer.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -17,12 +18,34 @@ internal static class Program
             {
                 options.Banner = "Welcome to Jake's custom CLI";
             })
-            .AddConsoleHelpMenu()
+            .AddConsoleHelp()
             .AddServices(services =>
             {
+                services.AddSingleton<TestService>();
+                services.AddSingleton<Test2Service>();
             });
         
         await client.RunAsync(args);
+    }
+}
+
+[Group("test-group")]
+public class TestService
+{
+    [Surface("test")]
+    public void Test()
+    {
+
+    }
+}
+
+[Group("test-2-group", HelpText = "This is how you do it")]
+public class Test2Service
+{
+    [Surface("test2")]
+    public void Test()
+    {
+
     }
 }
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using CommandSurfacer.Models;
+using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.ObjectiveC;
@@ -9,15 +10,38 @@ public class CommandRunner : ICommandRunner
 {
     private readonly IArgsParser _argsParser;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ISendHelpMessages _sendHelpMessages;
 
     public CommandRunner(IArgsParser argsParser, IServiceProvider serviceProvider)
     {
         _argsParser = argsParser;
         _serviceProvider = serviceProvider;
+
+        _sendHelpMessages = serviceProvider.GetService<ISendHelpMessages>();
     }
 
     private object RunCommand(string input, params object[] additionalParameters)
     {
+        var options = _argsParser.ParseTypedValue<CommonSurfaceOptions>(ref input);
+        if (options.ProvidedHelpSwitch && _sendHelpMessages is not null)
+        {
+            var surface = _argsParser.ResolveSurfaceAttributeOrDefault(input);
+            if (surface is null)
+            {
+                var group = _argsParser.ResolveGroupAttributeOrDefault(input);
+                if (group is not null)
+                    _sendHelpMessages.SendClientHelp(group);
+                else
+                    _sendHelpMessages.SendClientHelp();
+            }
+            else
+                _sendHelpMessages.SendClientHelp(surface);
+
+            return default;
+        }
+
+        additionalParameters = Utils.CombineArrays(additionalParameters, options);
+
         var target = _argsParser.ParseCommandSurface(ref input);
 
         var parameters = _argsParser.ParseMethodParameters(ref input, target.Method, additionalParameters);

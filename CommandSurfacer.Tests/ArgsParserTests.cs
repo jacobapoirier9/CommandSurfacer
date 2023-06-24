@@ -21,10 +21,10 @@ public class ArgsParserTests : BaseTests
 
         Assert.Empty(input);
 
-        Assert.Equal("sample-one", surface.TypeAttribute.Name);
+        Assert.Equal("sample-one", surface.Group.Name);
         Assert.Equal(nameof(SampleServiceOne), surface.Type.Name);
 
-        Assert.Equal("one", surface.MethodAttribute.Name);
+        Assert.Equal("one", surface.Surface.Name);
         Assert.Equal(nameof(SampleServiceOne.MethodOne), surface.Method.Name);
     }
 
@@ -45,10 +45,10 @@ public class ArgsParserTests : BaseTests
 
         Assert.Empty(input);
 
-        Assert.Equal("sample-two", surface.TypeAttribute.Name);
+        Assert.Equal("sample-two", surface.Group.Name);
         Assert.Equal(nameof(SampleServiceTwo), surface.Type.Name);
 
-        Assert.Equal("three", surface.MethodAttribute.Name);
+        Assert.Equal("three", surface.Surface.Name);
         Assert.Equal(nameof(SampleServiceTwo.MethodThree), surface.Method.Name);
     }
 
@@ -60,10 +60,10 @@ public class ArgsParserTests : BaseTests
 
         Assert.Empty(input);
 
-        Assert.Equal("sample-three", surface.TypeAttribute.Name);
+        Assert.Equal("sample-three", surface.Group.Name);
         Assert.Equal(nameof(SampleServiceThree), surface.Type.Name);
 
-        Assert.Equal("five", surface.MethodAttribute.Name);
+        Assert.Equal("five", surface.Surface.Name);
         Assert.Equal(nameof(SampleServiceThree.MethodFive), surface.Method.Name);
     }
     #endregion
@@ -83,7 +83,7 @@ public class ArgsParserTests : BaseTests
         var input = $"{inputValue}   --t1 notused --t2 notused";
         var surface = new SurfaceAttribute("test-name");
 
-        var output = _argsParser.ParsePresenceValue(ref input, surface, typeof(bool));
+        var output = _argsParser.ParsePresenceValue(ref input, typeof(bool), surface);
 
         Assert.NotNull(output);
         Assert.True(output);
@@ -104,7 +104,7 @@ public class ArgsParserTests : BaseTests
         var input = $"--t1 notused   {inputValue}  --t2 notused";
         var surface = new SurfaceAttribute("test-name");
 
-        var output = _argsParser.ParsePresenceValue(ref input, surface, typeof(bool));
+        var output = _argsParser.ParsePresenceValue(ref input, typeof(bool), surface);
 
         Assert.NotNull(output);
         Assert.True(output);
@@ -125,7 +125,7 @@ public class ArgsParserTests : BaseTests
         var input = $"--t1 notused --t2 notused      {inputValue}";
         var surface = new SurfaceAttribute("test-name");
 
-        var output = _argsParser.ParsePresenceValue(ref input, surface, typeof(bool));
+        var output = _argsParser.ParsePresenceValue(ref input, typeof(bool), surface);
 
         Assert.NotNull(output);
         Assert.True(output);
@@ -146,7 +146,7 @@ public class ArgsParserTests : BaseTests
         var input = $"{inputValue}   --t1 notused --t2 notused";
         var surface = new SurfaceAttribute("test-name");
 
-        var output = _argsParser.ParsePresenceValue(ref input, surface, typeof(bool?));
+        var output = _argsParser.ParsePresenceValue(ref input, typeof(bool?), surface);
 
         Assert.NotNull(output);
         Assert.True(output);
@@ -167,7 +167,7 @@ public class ArgsParserTests : BaseTests
         var input = $"--t1 notused   {inputValue}  --t2 notused";
         var surface = new SurfaceAttribute("test-name");
 
-        var output = _argsParser.ParsePresenceValue(ref input, surface, typeof(bool?));
+        var output = _argsParser.ParsePresenceValue(ref input, typeof(bool?), surface);
 
         Assert.NotNull(output);
         Assert.True(output);
@@ -188,7 +188,7 @@ public class ArgsParserTests : BaseTests
         var input = $"--t1 notused --t2 notused      {inputValue}";
         var surface = new SurfaceAttribute("test-name");
 
-        var output = _argsParser.ParsePresenceValue(ref input, surface, typeof(bool?));
+        var output = _argsParser.ParsePresenceValue(ref input, typeof(bool?), surface);
 
         Assert.NotNull(output);
         Assert.True(output);
@@ -208,7 +208,7 @@ public class ArgsParserTests : BaseTests
         var input = $"{inputValue}   --t1 notused --t2 notused";
         var surface = new SurfaceAttribute("test-name");
 
-        var output = _argsParser.ParsePresenceValue(ref input, surface, typeof(bool));
+        var output = _argsParser.ParsePresenceValue(ref input, typeof(bool), surface);
 
         Assert.NotNull(output);
         Assert.False(output);
@@ -228,7 +228,7 @@ public class ArgsParserTests : BaseTests
         var input = $"--t1 notused   {inputValue}  --t2 notused";
         var surface = new SurfaceAttribute("test-name");
 
-        var output = _argsParser.ParsePresenceValue(ref input, surface, typeof(bool));
+        var output = _argsParser.ParsePresenceValue(ref input, typeof(bool), surface);
 
         Assert.NotNull(output);
         Assert.False(output);
@@ -248,7 +248,7 @@ public class ArgsParserTests : BaseTests
         var input = $"--t1 notused --t2 notused      {inputValue}";
         var surface = new SurfaceAttribute("test-name");
 
-        var output = _argsParser.ParsePresenceValue(ref input, surface, typeof(bool));
+        var output = _argsParser.ParsePresenceValue(ref input, typeof(bool), surface);
 
         Assert.NotNull(output);
         Assert.False(output);
@@ -268,7 +268,7 @@ public class ArgsParserTests : BaseTests
         var input = $"{inputValue}   --t1 notused --t2 notused";
         var surface = new SurfaceAttribute("test-name");
 
-        var output = _argsParser.ParsePresenceValue(ref input, surface, typeof(bool?));
+        var output = _argsParser.ParsePresenceValue(ref input, typeof(bool?), surface);
 
         Assert.NotNull(output);
         Assert.False(output);
@@ -288,7 +288,7 @@ public class ArgsParserTests : BaseTests
         var input = $"--t1 notused   {inputValue}  --t2 notused";
         var surface = new SurfaceAttribute("test-name");
 
-        var output = _argsParser.ParsePresenceValue(ref input, surface, typeof(bool?));
+        var output = _argsParser.ParsePresenceValue(ref input, typeof(bool?), surface);
 
         Assert.NotNull(output);
         Assert.False(output);
@@ -308,7 +308,7 @@ public class ArgsParserTests : BaseTests
         var input = $"--t1 notused --t2 notused      {inputValue}";
         var surface = new SurfaceAttribute("test-name");
 
-        var output = _argsParser.ParsePresenceValue(ref input, surface, typeof(bool?));
+        var output = _argsParser.ParsePresenceValue(ref input, typeof(bool?), surface);
 
         Assert.NotNull(output);
         Assert.False(output);
@@ -321,7 +321,7 @@ public class ArgsParserTests : BaseTests
         var input = "--t1 notused --t2 notused";
         var surface = new SurfaceAttribute("test-name");
 
-        var output = _argsParser.ParsePresenceValue(ref input, surface, typeof(bool));
+        var output = _argsParser.ParsePresenceValue(ref input, typeof(bool), surface);
 
         Assert.NotNull(output);
         Assert.False(output);
@@ -334,7 +334,7 @@ public class ArgsParserTests : BaseTests
         var input = "--t1 notused --t2 notused";
         var surface = new SurfaceAttribute("test-name");
 
-        var output = _argsParser.ParsePresenceValue(ref input, surface, typeof(bool?));
+        var output = _argsParser.ParsePresenceValue(ref input, typeof(bool?), surface);
 
         Assert.Null(output);
         Assert.Equal("--t1 notused --t2 notused", input);
@@ -516,7 +516,7 @@ public class ArgsParserTests : BaseTests
         var input = $"--test-name {inputAndExpectedValue}";
         var surface = new SurfaceAttribute("test-name");
 
-        var output = _argsParser.ParseTypedValue(ref input, surface, targetType);
+        var output = _argsParser.ParseTypedValue(ref input, targetType, surface);
 
         if (output is not null) 
             Assert.Equal(targetType, output.GetType());
@@ -533,7 +533,7 @@ public class ArgsParserTests : BaseTests
             "--file .\\Sandbox\\TestFile.txt --directory .\\Sandbox"
         });
 
-        var parsed = (ParseTypedValue_StrongType)_argsParser.ParseTypedValue(ref input, null, typeof(ParseTypedValue_StrongType));
+        var parsed = (ParseTypedValue_StrongType)_argsParser.ParseTypedValue(ref input, typeof(ParseTypedValue_StrongType));
 
         Assert.Equal("value", parsed.String);
         Assert.Equal(1, parsed.Byte);
@@ -559,7 +559,7 @@ public class ArgsParserTests : BaseTests
     {
         var input = "--name-one ONE --name-two TWO";
 
-        var parsed = (ParseTypedValue_Parent)_argsParser.ParseTypedValue(ref input, null, typeof(ParseTypedValue_Parent));
+        var parsed = (ParseTypedValue_Parent)_argsParser.ParseTypedValue(ref input, typeof(ParseTypedValue_Parent));
 
         Assert.NotNull(parsed);
         Assert.Equal("ONE", parsed.NameOne);

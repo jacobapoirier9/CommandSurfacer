@@ -1,4 +1,6 @@
-﻿namespace CommandSurfacer.Services;
+﻿using CommandSurfacer.Models;
+
+namespace CommandSurfacer.Services;
 
 public interface IProcessService
 {

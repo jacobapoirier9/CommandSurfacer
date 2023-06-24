@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using CommandSurfacer.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CommandSurfacer.Services;
 
@@ -21,11 +22,11 @@ public class InteractiveConsole : IInteractiveConsole
         _continue = true;
     }
 
-    [Surface(EnterInteractiveConsoleCommand)]
+    [Surface(EnterInteractiveConsoleCommand, ExcludeFromHelp = true)]
     public void BeginInteractiveMode() => BeginInteractiveModeAsync().GetAwaiter().GetResult();
     public async Task BeginInteractiveModeAsync()
     {
-        if (_options.Banner is not null)
+        if (_options?.Banner is not null)
             Console.WriteLine(_options.Banner);
 
         while (_continue)
@@ -45,7 +46,7 @@ public class InteractiveConsole : IInteractiveConsole
                     _options.OnError(ex);
 
                 if (_options.OnErrorCommand is not null)
-                    await _commandRunner.RunAsync("help");
+                    await _commandRunner.RunAsync("/?");
 
             }
         }

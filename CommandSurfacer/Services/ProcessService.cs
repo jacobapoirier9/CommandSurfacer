@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using CommandSurfacer.Models;
+using System.Diagnostics;
 using System.Text;
 
 namespace CommandSurfacer.Services;
@@ -42,7 +43,7 @@ public class ProcessService : IProcessService
         };
 
         if (result.ExitCode > 0)
-            throw new ApplicationException($"Process finished with exit code {result.ExitCode}: {result.StandardError + result.StandardOutput}");
+            throw new InvalidProgramException($"Process finished with exit code {result.ExitCode}: {result.StandardError + result.StandardOutput}");
 
         return result;
     }

@@ -570,6 +570,6 @@ public class StringConverterTests : BaseTests
     public void StringToUnsupportedType_ThrowsException() => Assert.Throws<InvalidOperationException>(() => _stringConverter.Convert<StringConverterTests>(""));
 
     [Fact]
-    public void StringToNumeric_InvalidFormatException_ThrowsException() => Assert.Throws<InvalidOperationException>(() => _stringConverter.Convert<decimal>("jake"));
+    public void StringToNumeric_InvalidFormatException_ThrowsException() => Assert.Throws<InvalidCastException>(() => _stringConverter.Convert<decimal>("jake"));
     #endregion
 }

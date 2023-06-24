@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Data;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -25,18 +25,40 @@ public class ArgsParser : IArgsParser
         _stringConverter = stringConverter;
         _serviceProvider = serviceProvider;
 
-        var optionalTypeSurfaceIdentifiers = _commandSurfaces.Select(cs => cs.TypeAttribute?.Name)
+        var groupNames = _commandSurfaces.Select(cs => cs.Group?.Name)
             .Where(cs => cs is not null)
             .OrderByDescending(cs => cs.Length)
             .ToList();
 
-        var optionalMethodSurfaceIdentifiers = _commandSurfaces.Select(cs => cs.MethodAttribute?.Name)
+        var surfaceNames = _commandSurfaces.Select(cs => cs.Surface?.Name)
             .Where(cs => cs is not null)
             .OrderByDescending(cs => cs.Length)
             .ToList();
 
-        var pattern = $"^(?<TypeIdentifier>{string.Join('|', optionalTypeSurfaceIdentifiers)})? *(?<MethodIdentifier>{string.Join('|', optionalMethodSurfaceIdentifiers)})? *";
+        var pattern = $"^(?<GroupName>{string.Join('|', groupNames)})? *(?<SurfaceName>{string.Join('|', surfaceNames)})? *";
         _commandSurfaceRegex = new Regex(pattern, RegexOptions.IgnoreCase);
+    }
+
+    public GroupAttribute ResolveGroupAttributeOrDefault(string input)
+    {
+        var match = _commandSurfaceRegex.Match(input);
+
+        var providedName = match.Groups["GroupName"].Value;
+        var filtered = _commandSurfaces.Where(cs => cs.Group is not null && string.Equals(cs.Group.Name, providedName, StringComparison.OrdinalIgnoreCase));
+
+        var results = filtered.DistinctBy(f => f.Group.Name).Select(f => f.Group).ToList();
+        return results.Count == 1 ? results[0] : default;
+    }
+
+    public SurfaceAttribute ResolveSurfaceAttributeOrDefault(string input)
+    {
+        var match = _commandSurfaceRegex.Match(input);
+
+        var providedName = match.Groups["SurfaceName"].Value;
+        var filtered = _commandSurfaces.Where(cs => cs.Surface is not null && string.Equals(cs.Surface.Name, providedName, StringComparison.OrdinalIgnoreCase));
+
+        var results = filtered.DistinctBy(f => f.Surface.Name).Select(f => f.Surface).ToList();
+        return results.Count == 1 ? results[0] : default;
     }
 
     public CommandSurface ParseCommandSurface(ref string input)
@@ -44,26 +66,26 @@ public class ArgsParser : IArgsParser
         var match = _commandSurfaceRegex.Match(input);
         input = _commandSurfaceRegex.Replace(input, m => string.Empty);
 
-        var typeIdentifier = match.Groups["TypeIdentifier"].Value;
-        var methodIdentifier = match.Groups["MethodIdentifier"].Value;
+        var typeIdentifier = match.Groups["GroupName"].Value;
+        var methodIdentifier = match.Groups["SurfaceName"].Value;
 
         var filtered = _commandSurfaces.Where(cs => true);
 
         if (!string.IsNullOrEmpty(typeIdentifier))
-            filtered = filtered.Where(cs => cs.TypeAttribute is not null && string.Equals(cs.TypeAttribute.Name, typeIdentifier, StringComparison.OrdinalIgnoreCase));
+            filtered = filtered.Where(cs => cs.Group is not null && string.Equals(cs.Group.Name, typeIdentifier, StringComparison.OrdinalIgnoreCase));
 
         if (!string.IsNullOrEmpty(methodIdentifier))
-            filtered = filtered.Where(cs => cs.MethodAttribute is not null && string.Equals(cs.MethodAttribute.Name, methodIdentifier, StringComparison.OrdinalIgnoreCase));
+            filtered = filtered.Where(cs => cs.Surface is not null && string.Equals(cs.Surface.Name, methodIdentifier, StringComparison.OrdinalIgnoreCase));
 
         var results = filtered.ToList();
 
         if (results.Count != 1)
-            throw new ApplicationException($"Failed to resolve a single command surface. {results.Count} found.");
+            throw new ResolutionException(results.Count, _commandSurfaces.Count);
 
         return results.First();
     }
 
-    public bool? ParsePresenceValue(ref string input, SurfaceAttribute surfaceAttribute, Type targetType)
+    public bool? ParsePresenceValue(ref string input, Type targetType, SurfaceAttribute surfaceAttribute = null)
     {
         var allowedTrueValues = new string[] { "true", "yes", "y", "1" };
         var allowedFalseValues = new string[] { "false", "no", "n", "0" };
@@ -75,8 +97,8 @@ public class ArgsParser : IArgsParser
         var commandPrefixesPattern = string.Join('|', commandPrefixes.OrderByDescending(s => s.Length).Select(s => Regex.Escape(s)));
 
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>test-name)(?<Separator>[ :=]+(?<Value>false|true|yes|no|y|n|1|0)? *|$)
-        var pattern = @$"(?<= |^) *(?<Prefix>{commandPrefixesPattern})(?<Name>{surfaceAttribute.Name})(?<Separator>[ :=]+(?<Value>{allowedBooleanValuesPattern})? *|$)";
-        var  regex = new Regex(pattern, RegexOptions.IgnoreCase);
+        var pattern = @$"(?<= |^) *(?<Prefix>{commandPrefixesPattern})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+(?<Value>{allowedBooleanValuesPattern})? *|$)";
+        var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
         if (match.Success)
@@ -100,7 +122,7 @@ public class ArgsParser : IArgsParser
         var commandPrefixesPattern = string.Join('|', commandPrefixes.OrderByDescending(s => s.Length).Select(s => Regex.Escape(s)));
 
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>test-name)(?<Separator>[ :=]+)(?<Value>[\w:\\.-{}]+|"[\w\s:\\.-{}',]*"|'[\w\s:\\.-{}",]*') *|$
-        var pattern = $@"(?<= |^) *(?<Prefix>{commandPrefixesPattern})(?<Name>{surfaceAttribute.Name})(?<Separator>[ :=]+)(?<Value>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}',]*""|'[\w\s:\\.-{{}}"",]*') *|$";
+        var pattern = $@"(?<= |^) *(?<Prefix>{commandPrefixesPattern})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?<Value>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}',]*""|'[\w\s:\\.-{{}}"",]*') *|$";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
@@ -123,13 +145,13 @@ public class ArgsParser : IArgsParser
         return null;
     }
 
-    public object ParseTypedValue(ref string input, SurfaceAttribute surfaceAttribute, Type targetType)
+    public object ParseTypedValue(ref string input, Type targetType, SurfaceAttribute surfaceAttribute = null)
     {
         if (_stringConverter.SupportsType(targetType))
         {
             if (targetType == typeof(bool) || targetType == typeof(bool?))
             {
-                var presenceValue = ParsePresenceValue(ref input, surfaceAttribute, targetType);
+                var presenceValue = ParsePresenceValue(ref input, targetType, surfaceAttribute);
                 return presenceValue;
             }
 
@@ -145,7 +167,7 @@ public class ArgsParser : IArgsParser
         foreach (var property in properties)
         {
             var attribute = property.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(property.Name);
-            var value = ParseTypedValue(ref input, attribute, property.PropertyType);
+            var value = ParseTypedValue(ref input, property.PropertyType, attribute);
             property.SetValue(instance, value);
         }
 
@@ -175,28 +197,29 @@ public class ArgsParser : IArgsParser
         var parameters = method.GetParameters();
         foreach (var parameter in parameters)
         {
-            var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(parameter.Name);
-            var value = GetSpecialValue(parameter.ParameterType) ?? ParseTypedValue(ref input, surfaceAttribute, parameter.ParameterType);
+            var value = default(object);
 
-            // If ParseTypedValue returns the default value, we do not want to add it to response.
-            // This will allow anonymous parameters to be inserted more accurately.
-            if (parameter.ParameterType.IsAssignableTo(typeof(IConvertible)))
+            var additionalParameter = additionalParametersList.FirstOrDefault(ap => ap.GetType().IsAssignableTo(parameter.ParameterType));
+            if (additionalParameter is not null)
             {
-                try
-                {
-                    if (object.Equals(value, Activator.CreateInstance(parameter.ParameterType)))
-                        value = null;
-                }
-                catch { } 
+                value = additionalParameter;
+                additionalParametersList.Remove(additionalParameter);
             }
-
-            if (value is null)
+            else
             {
-                var additionalParameter = additionalParametersList.FirstOrDefault(ap => ap.GetType().IsAssignableTo(parameter.ParameterType));
-                if (additionalParameter is not null)
+                var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(parameter.Name);
+                value = GetSpecialValue(parameter.ParameterType) ?? ParseTypedValue(ref input, parameter.ParameterType, surfaceAttribute);
+
+                // If ParseTypedValue returns the default value, we do not want to add it to response.
+                // This will allow anonymous parameters to be inserted more accurately.
+                if (parameter.ParameterType.IsAssignableTo(typeof(IConvertible)))
                 {
-                    value = additionalParameter;
-                    additionalParametersList.Remove(additionalParameter);
+                    try
+                    {
+                        if (object.Equals(value, Activator.CreateInstance(parameter.ParameterType)))
+                            value = null;
+                    }
+                    catch { }
                 }
             }
 
@@ -219,21 +242,10 @@ public class ArgsParser : IArgsParser
                 response[i] = _stringConverter.Convert(parameters[i].ParameterType, match.Value.Trim('\'', '"', ' '));
                 matchesIndex++;
 
-                input = ReplaceFirstOccurance(input, match.Value, string.Empty).Trim('\'', '"', ' ');
+                input = Utils.ReplaceFirstOccurance(input, match.Value, string.Empty).Trim('\'', '"', ' ');
             }
         }
 
         return response.ToArray();
-    }
-
-    private static string ReplaceFirstOccurance(string input, string substring, string replacement)
-    {
-        var firstIndex = input.IndexOf(substring);
-
-        var stringStart = input.Substring(0, firstIndex);
-        var stringEnd = input.Substring(firstIndex + substring.Length);
-
-        var stringFinal = stringStart + replacement + stringEnd;
-        return stringFinal;
     }
 }
