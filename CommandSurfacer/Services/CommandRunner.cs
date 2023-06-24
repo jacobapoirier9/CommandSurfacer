@@ -46,13 +46,6 @@ public class CommandRunner : ICommandRunner
             return default;
         }
 
-
-
-
-
-
-
-
         additionalParameters = Utils.CombineArrays(additionalParameters, options);
 
         var target = _argsParser.ParseCommandSurface(ref input);
