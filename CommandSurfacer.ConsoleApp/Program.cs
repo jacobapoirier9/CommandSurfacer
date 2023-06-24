@@ -34,7 +34,7 @@ internal static class Program
 public class TestService
 {
     [Surface("test")]
-    public void Test(CommonSurfaceOptions common)
+    public void Test()
     {
 
     }
@@ -44,7 +44,7 @@ public class TestService
 public class Test2Service
 {
     [Surface("test2")]
-    public void Test(CommonSurfaceOptions common)
+    public void Test()
     {
 
     }

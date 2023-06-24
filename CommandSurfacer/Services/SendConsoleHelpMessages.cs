@@ -91,6 +91,7 @@ public class SendConsoleHelpMessages : ISendHelpMessages
         var surfaces = _commandSurfaces.Where(cs => cs.Group is not null && cs.Group.Name == groupAttribute.Name);
         var maxNameLength = CalculateMaxStringLength(surfaces.Select(s => s.Surface.Name));
 
+        builder.AppendLine();
         AppendGroupLine(builder, groupAttribute, groupAttribute.Name.Length);
         foreach (var surface in surfaces)
         {
@@ -129,6 +130,7 @@ public class SendConsoleHelpMessages : ISendHelpMessages
 
         var maxNameLength = CalculateMaxStringLength(dictionary.Select(d => d.Key));
 
+        builder.AppendLine();
         AppendSurfaceLine(builder, surfaceAttribute, surfaceAttribute.Name.Length);
         foreach (var item in dictionary)
         {
