@@ -11,7 +11,8 @@ internal static class Program
     private static void Main(string[] args) => MainAsync(args).GetAwaiter().GetResult();
     private static async Task MainAsync(string[] args)
     {
-        args = new string[] { "" };
+        if (System.Diagnostics.Debugger.IsAttached)
+            args = new string[] { "" };
 
         var client = Client.Create()
             .AddInteractiveConsole(options =>
