@@ -11,7 +11,7 @@ internal static class Program
     private static void Main(string[] args) => MainAsync(args).GetAwaiter().GetResult();
     private static async Task MainAsync(string[] args)
     {
-        args = new string[] { "" };
+        args = new string[] { "help" };
 
         var client = Client.Create()
             .AddInteractiveConsole(options =>
@@ -22,6 +22,7 @@ internal static class Program
             .AddServices(services =>
             {
                 services.AddSingleton<TestService>();
+                services.AddSingleton<Test2Service>();
             });
         
         await client.RunAsync(args);
@@ -29,9 +30,20 @@ internal static class Program
     }
 }
 
+[Group("test-group")]
 public class TestService
 {
     [Surface("test")]
+    public void Test(CommonSurfaceOptions common)
+    {
+
+    }
+}
+
+[Group("test-2-group", HelpText = "This is how you do it")]
+public class Test2Service
+{
+    [Surface("test2")]
     public void Test(CommonSurfaceOptions common)
     {
 

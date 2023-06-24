@@ -1,4 +1,6 @@
 ﻿using CommandSurfacer.Models;
+using System.Collections.Generic;
+using System.Numerics;
 using System.Reflection;
 using System.Text;
 
@@ -21,11 +23,11 @@ public class SendConsoleHelpMessages : ISendHelpMessages
 
     private CommandSurfacerHelp CreateCommandSurfacerHelp()
     {
-        var groups = _commandSurfaces.Where(cs => cs.Group is null && !cs.Surface.ExcludeFromHelp.IsTrue())
+        var groups = _commandSurfaces.Where(cs => cs.Group is null && !cs.Surface.ExcludeFromHelp)
             .OrderByDescending(cs => cs.Surface.Name)
             .ToList();
 
-        var surfaces = _commandSurfaces.Where(cs => cs.Group is not null && !cs.Group.ExcludeFromHelp.IsTrue())
+        var surfaces = _commandSurfaces.Where(cs => cs.Group is not null && !cs.Group.ExcludeFromHelp)
             .OrderByDescending(cs => cs.Group.Name)
             .ThenByDescending(cs => cs.Surface.Name)
             .GroupBy(cs => cs.Group)
@@ -40,107 +42,133 @@ public class SendConsoleHelpMessages : ISendHelpMessages
         return result;
     }
 
-    private void AddCommandSurfaceParameterHelp(StringBuilder builder, CommandSurface surface, string paddedSpacing)
+    private static int CalculateMaxStringLength(params IEnumerable<string>[] collections)
     {
+        var flatten = collections.SelectMany(c => c).Select(c => c.Length);
+        var max = flatten.Any() ? flatten.Max() : default;
+        return max;
+    }
+
+    private void AppendBanner(StringBuilder builder)
+    {
+        builder.AppendLine("Begin help message");
+    }
+
+    private void AppendGroupLine(StringBuilder builder, GroupAttribute group, int maxNameLength)
+    {
+        builder.AppendLine(string.Format("    {0," + maxNameLength + "}        {1}", group.Name, group.HelpText));
+    }
+
+    private void AppendSurfaceLine(StringBuilder builder, SurfaceAttribute surface, int maxNameLength)
+    {
+        builder.AppendLine(string.Format("    {0," + maxNameLength + "}        {1}", surface.Name, surface.HelpText));
+    }
+
+    private void AppendClientHelp(StringBuilder builder, CommandSurfacerHelp help)
+    {
+        AppendBanner(builder);
+
+        var maxNameLength = CalculateMaxStringLength(help.Groups.Select(g => g.Key.Name), help.Surfaces.Select(s => s.Surface.Name));
+
+        foreach (var group in help.Groups)
+        {
+            builder.AppendLine();
+            AppendGroupLine(builder, group.Key, maxNameLength);
+        }
+
+        foreach (var surface in help.Surfaces)
+        {
+            builder.AppendLine();
+            AppendSurfaceLine(builder, surface.Surface, maxNameLength);
+        }
+    }
+
+    private void AppendAllGroupHelp(StringBuilder builder, GroupAttribute groupAttribute)
+    {
+        AppendBanner(builder);
+
+        var surfaces = _commandSurfaces.Where(cs => cs.Group is not null && cs.Group.Name == groupAttribute.Name);
+        var maxNameLength = CalculateMaxStringLength(surfaces.Select(s => s.Surface.Name));
+
+        AppendGroupLine(builder, groupAttribute, groupAttribute.Name.Length);
+        foreach (var surface in surfaces)
+        {
+            builder.AppendLine();
+            builder.Append("  ");
+            AppendSurfaceLine(builder, surface.Surface, maxNameLength);
+        }
+    }
+
+    private void AppendAllSurfaceHelp(StringBuilder builder, SurfaceAttribute surfaceAttribute)
+    {
+        AppendBanner(builder);
+
+        var surface = _commandSurfaces.Single(cs => (cs.Group is null || cs.Group.Name == surfaceAttribute.Name) && (cs.Surface.Name == surfaceAttribute.Name));
+
+        var dictionary = new Dictionary<string, SurfaceAttribute>();
+
         var parameters = surface.Method.GetParameters();
         foreach (var parameter in parameters)
         {
-            builder.Append(paddedSpacing);
-            builder.Append("  ");
-
-            var parameterAttribute = parameter.GetCustomAttribute<SurfaceAttribute>();
-            builder.Append(parameterAttribute?.Name ?? parameter.Name);
-
-            if (parameterAttribute is not null && !string.IsNullOrEmpty(parameterAttribute.HelpText))
-            {
-                builder.Append("  -  ");
-                builder.Append(parameterAttribute.HelpText);
-            }
-
-            var typeAttribute = parameter.ParameterType.GetCustomAttribute<SurfaceAttribute>();
-            if (typeAttribute is not null && !string.IsNullOrEmpty(typeAttribute.HelpText))
-            {
-                builder.Append("  -  ");
-                builder.Append(typeAttribute.HelpText);
-            }
-
-            builder.AppendLine();
-
+            var parameterAttribute = parameter.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(parameter.Name);
             if (!_stringConverter.SupportsType(parameter.ParameterType) && _serviceProvider.GetService(parameter.ParameterType) is null)
             {
                 var properties = parameter.ParameterType.GetProperties();
                 foreach (var property in properties)
                 {
-                    builder.Append(paddedSpacing);
-                    builder.Append("    ");
-
-                    var propertyAttribute = property.GetCustomAttribute<SurfaceAttribute>();
-                    builder.Append(propertyAttribute?.Name ?? property.Name);
-
-                    if (propertyAttribute is not null && !string.IsNullOrEmpty(propertyAttribute.HelpText))
-                    {
-                        builder.Append("  -  ");
-                        builder.Append(propertyAttribute.HelpText);
-                    }
-
-                    builder.AppendLine();
+                    var propertyAttribute = property.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(property.Name);
+                    dictionary.Add(propertyAttribute.Name, propertyAttribute);
                 }
             }
+            else
+            {
+                dictionary.TryAdd(parameterAttribute.Name, parameterAttribute);
+            }
         }
+
+        var maxNameLength = CalculateMaxStringLength(dictionary.Select(d => d.Key));
+
+        AppendSurfaceLine(builder, surfaceAttribute, surfaceAttribute.Name.Length);
+        foreach (var item in dictionary)
+        {
+            builder.AppendLine();
+            builder.Append("  ");
+            AppendSurfaceLine(builder, item.Value, maxNameLength);
+        }
+    }
+
+    private void Send(StringBuilder builder)
+    {
+        var output = builder.ToString();
+        Console.WriteLine(output);
     }
 
     [Surface("help")]
     public void SendClientHelp()
     {
+        var builder = new StringBuilder();
         var help = CreateCommandSurfacerHelp();
 
+        AppendClientHelp(builder, help);
+
+        Send(builder);
+    }
+
+    public void SendClientHelp(GroupAttribute groupAttribute)
+    {
         var builder = new StringBuilder();
-        builder.AppendLine();
 
-        foreach (var surface in help.Surfaces)
-        {
-            builder.Append(surface.Surface.Name);
-            if (!string.IsNullOrEmpty(surface.Surface.HelpText))
-            {
-                builder.Append("  -  ");
-                builder.Append(surface.Surface.HelpText);
-            }
+        AppendAllGroupHelp(builder, groupAttribute);
 
-            builder.AppendLine();
-            AddCommandSurfaceParameterHelp(builder, surface, "");
-        }
+        Send(builder);
+    }
 
-        builder.AppendLine();
+    public void SendClientHelp(SurfaceAttribute surfaceAttribute)
+    {
+        var builder = new StringBuilder();
 
-        foreach (var group in help.Groups)
-        {
-            builder.Append(group.Key.Name);
-            if (!string.IsNullOrEmpty(group.Key.HelpText))
-            {
-                builder.Append(" - ");
-                builder.Append(group.Key.HelpText);
-            }
+        AppendAllSurfaceHelp(builder, surfaceAttribute);
 
-            builder.AppendLine();
-
-            foreach (var surface in group)
-            {
-                builder.Append("  ");
-                builder.Append(surface.Surface.Name);
-                if (!string.IsNullOrEmpty(surface.Surface.HelpText))
-                {
-                    builder.Append("  -  ");
-                    builder.Append(surface.Surface.HelpText);
-                }
-
-                builder.AppendLine();
-                AddCommandSurfaceParameterHelp(builder, surface, "  ");
-            }
-
-            builder.AppendLine();
-        }
-
-        var helpText = builder.ToString();
-        Console.WriteLine(helpText);
+        Send(builder);
     }
 }

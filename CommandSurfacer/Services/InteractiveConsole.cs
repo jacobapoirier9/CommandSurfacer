@@ -22,7 +22,7 @@ public class InteractiveConsole : IInteractiveConsole
         _continue = true;
     }
 
-    [Surface(EnterInteractiveConsoleCommand)]
+    [Surface(EnterInteractiveConsoleCommand, ExcludeFromHelp = true)]
     public void BeginInteractiveMode() => BeginInteractiveModeAsync().GetAwaiter().GetResult();
     public async Task BeginInteractiveModeAsync()
     {
