@@ -51,7 +51,8 @@ public class SendConsoleHelpMessages : ISendHelpMessages
 
     private void AppendBanner(StringBuilder builder)
     {
-        builder.AppendLine("Begin help message");
+        builder.AppendLine();
+        builder.AppendLine("  Begin help message");
     }
 
     private void AppendGroupLine(StringBuilder builder, GroupAttribute group, int maxNameLength)
@@ -103,7 +104,7 @@ public class SendConsoleHelpMessages : ISendHelpMessages
     {
         AppendBanner(builder);
 
-        var surface = _commandSurfaces.Single(cs => (cs.Group is null || cs.Group.Name == surfaceAttribute.Name) && (cs.Surface.Name == surfaceAttribute.Name));
+        var surface = _commandSurfaces.Single(cs => /*(cs.Group is null || cs.Group.Name == surfaceAttribute.Name) &&*/ (cs.Surface.Name == surfaceAttribute.Name));
 
         var dictionary = new Dictionary<string, SurfaceAttribute>();
 
@@ -143,7 +144,6 @@ public class SendConsoleHelpMessages : ISendHelpMessages
         Console.WriteLine(output);
     }
 
-    [Surface("help")]
     public void SendClientHelp()
     {
         var builder = new StringBuilder();

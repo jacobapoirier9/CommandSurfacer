@@ -46,7 +46,7 @@ public class InteractiveConsole : IInteractiveConsole
                     _options.OnError(ex);
 
                 if (_options.OnErrorCommand is not null)
-                    await _commandRunner.RunAsync("help");
+                    await _commandRunner.RunAsync("/?");
 
             }
         }

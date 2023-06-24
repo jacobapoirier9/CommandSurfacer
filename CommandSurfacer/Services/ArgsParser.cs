@@ -35,8 +35,30 @@ public class ArgsParser : IArgsParser
             .OrderByDescending(cs => cs.Length)
             .ToList();
 
-        var pattern = $"^(?<TypeIdentifier>{string.Join('|', groupNames)})? *(?<MethodIdentifier>{string.Join('|', surfaceNames)})? *";
+        var pattern = $"^(?<GroupName>{string.Join('|', groupNames)})? *(?<SurfaceName>{string.Join('|', surfaceNames)})? *";
         _commandSurfaceRegex = new Regex(pattern, RegexOptions.IgnoreCase);
+    }
+
+    public GroupAttribute ResolveGroupAttributeOrDefault(string input)
+    {
+        var match = _commandSurfaceRegex.Match(input);
+
+        var providedName = match.Groups["GroupName"].Value;
+        var filtered = _commandSurfaces.Where(cs => cs.Group is not null && string.Equals(cs.Group.Name, providedName, StringComparison.OrdinalIgnoreCase));
+
+        var results = filtered.DistinctBy(f => f.Group.Name).Select(f => f.Group).ToList();
+        return results.Count == 1 ? results[0] : default;
+    }
+
+    public SurfaceAttribute ResolveSurfaceAttributeOrDefault(string input)
+    {
+        var match = _commandSurfaceRegex.Match(input);
+
+        var providedName = match.Groups["SurfaceName"].Value;
+        var filtered = _commandSurfaces.Where(cs => cs.Surface is not null && string.Equals(cs.Surface.Name, providedName, StringComparison.OrdinalIgnoreCase));
+
+        var results = filtered.DistinctBy(f => f.Surface.Name).Select(f => f.Surface).ToList();
+        return results.Count == 1 ? results[0] : default;
     }
 
     public CommandSurface ParseCommandSurface(ref string input)
@@ -44,8 +66,8 @@ public class ArgsParser : IArgsParser
         var match = _commandSurfaceRegex.Match(input);
         input = _commandSurfaceRegex.Replace(input, m => string.Empty);
 
-        var typeIdentifier = match.Groups["TypeIdentifier"].Value;
-        var methodIdentifier = match.Groups["MethodIdentifier"].Value;
+        var typeIdentifier = match.Groups["GroupName"].Value;
+        var methodIdentifier = match.Groups["SurfaceName"].Value;
 
         var filtered = _commandSurfaces.Where(cs => true);
 

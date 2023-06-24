@@ -11,7 +11,7 @@ internal static class Program
     private static void Main(string[] args) => MainAsync(args).GetAwaiter().GetResult();
     private static async Task MainAsync(string[] args)
     {
-        args = new string[] { "help" };
+        args = new string[] { "" };
 
         var client = Client.Create()
             .AddInteractiveConsole(options =>

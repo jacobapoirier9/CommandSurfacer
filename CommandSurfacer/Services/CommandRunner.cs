@@ -16,13 +16,42 @@ public class CommandRunner : ICommandRunner
     {
         _argsParser = argsParser;
         _serviceProvider = serviceProvider;
+
+        _sendHelpMessages = serviceProvider.GetService<ISendHelpMessages>();
     }
 
     private object RunCommand(string input, params object[] additionalParameters)
     {
         var options = _argsParser.ParseTypedValue<CommonSurfaceOptions>(ref input);
         if (options.ProvidedHelpSwitch && _sendHelpMessages is not null)
-            _sendHelpMessages.SendClientHelp();
+        {
+            var surface = _argsParser.ResolveSurfaceAttributeOrDefault(input);
+            if (surface is null)
+            {
+                var group = _argsParser.ResolveGroupAttributeOrDefault(input);
+                if (group is not null)
+                {
+                    _sendHelpMessages.SendClientHelp(group);
+                }
+                else
+                {
+                    _sendHelpMessages.SendClientHelp();
+                }
+            }
+            else
+            {
+                _sendHelpMessages.SendClientHelp(surface);
+            }
+
+            return default;
+        }
+
+
+
+
+
+
+
 
         additionalParameters = Utils.CombineArrays(additionalParameters, options);
 
