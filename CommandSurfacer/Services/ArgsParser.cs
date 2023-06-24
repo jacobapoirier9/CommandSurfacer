@@ -39,12 +39,15 @@ public class ArgsParser : IArgsParser
         _commandSurfaceRegex = new Regex(pattern, RegexOptions.IgnoreCase);
     }
 
+    private static bool EqualsIgnoreCase(string left, string right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
+    private static string ToRegexPattern(IEnumerable<string> values) => string.Join('|', values.OrderByDescending(s => s.Length).Select(Regex.Escape));
+
     public GroupAttribute ResolveGroupAttributeOrDefault(string input)
     {
         var match = _commandSurfaceRegex.Match(input);
 
         var providedName = match.Groups["GroupName"].Value;
-        var filtered = _commandSurfaces.Where(cs => cs.Group is not null && string.Equals(cs.Group.Name, providedName, StringComparison.OrdinalIgnoreCase));
+        var filtered = _commandSurfaces.Where(cs => cs.Group is not null && EqualsIgnoreCase(cs.Group.Name, providedName));
 
         var results = filtered.DistinctBy(f => f.Group.Name).Select(f => f.Group).ToList();
         return results.Count == 1 ? results[0] : default;
@@ -55,7 +58,7 @@ public class ArgsParser : IArgsParser
         var match = _commandSurfaceRegex.Match(input);
 
         var providedName = match.Groups["SurfaceName"].Value;
-        var filtered = _commandSurfaces.Where(cs => cs.Surface is not null && string.Equals(cs.Surface.Name, providedName, StringComparison.OrdinalIgnoreCase));
+        var filtered = _commandSurfaces.Where(cs => cs.Surface is not null && EqualsIgnoreCase(cs.Surface.Name, providedName));
 
         var results = filtered.DistinctBy(f => f.Surface.Name).Select(f => f.Surface).ToList();
         return results.Count == 1 ? results[0] : default;
@@ -72,10 +75,10 @@ public class ArgsParser : IArgsParser
         var filtered = _commandSurfaces.Where(cs => true);
 
         if (!string.IsNullOrEmpty(typeIdentifier))
-            filtered = filtered.Where(cs => cs.Group is not null && string.Equals(cs.Group.Name, typeIdentifier, StringComparison.OrdinalIgnoreCase));
+            filtered = filtered.Where(cs => cs.Group is not null && EqualsIgnoreCase(cs.Group.Name, typeIdentifier));
 
         if (!string.IsNullOrEmpty(methodIdentifier))
-            filtered = filtered.Where(cs => cs.Surface is not null && string.Equals(cs.Surface.Name, methodIdentifier, StringComparison.OrdinalIgnoreCase));
+            filtered = filtered.Where(cs => cs.Surface is not null && EqualsIgnoreCase(cs.Surface.Name, methodIdentifier));
 
         var results = filtered.ToList();
 
@@ -91,13 +94,10 @@ public class ArgsParser : IArgsParser
         var allowedFalseValues = new string[] { "false", "no", "n", "0" };
 
         var allowedBooleanValues = allowedTrueValues.Concat(allowedFalseValues);
-        var allowedBooleanValuesPattern = string.Join('|', allowedBooleanValues.OrderByDescending(s => s.Length));
-
         var commandPrefixes = new string[] { "--", "-", "/" };
-        var commandPrefixesPattern = string.Join('|', commandPrefixes.OrderByDescending(s => s.Length).Select(s => Regex.Escape(s)));
 
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>test-name)(?<Separator>[ :=]+(?<Value>false|true|yes|no|y|n|1|0)? *|$)
-        var pattern = @$"(?<= |^) *(?<Prefix>{commandPrefixesPattern})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+(?<Value>{allowedBooleanValuesPattern})? *|$)";
+        var pattern = @$"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+(?<Value>{ToRegexPattern(allowedBooleanValues)})? *|$)";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
@@ -119,10 +119,9 @@ public class ArgsParser : IArgsParser
     public string ParseStringValue(ref string input, SurfaceAttribute surfaceAttribute)
     {
         var commandPrefixes = new string[] { "--", "-", "/" };
-        var commandPrefixesPattern = string.Join('|', commandPrefixes.OrderByDescending(s => s.Length).Select(s => Regex.Escape(s)));
 
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>test-name)(?<Separator>[ :=]+)(?<Value>[\w:\\.-{}]+|"[\w\s:\\.-{}',]*"|'[\w\s:\\.-{}",]*') *|$
-        var pattern = $@"(?<= |^) *(?<Prefix>{commandPrefixesPattern})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?<Value>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}',]*""|'[\w\s:\\.-{{}}"",]*') *|$";
+        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?<Value>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}',]*""|'[\w\s:\\.-{{}}"",]*') *|$";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
