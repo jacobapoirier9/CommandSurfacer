@@ -3,6 +3,8 @@ using CommandSurfacer.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text;
+using static CommandSurfacer.ConsoleApp.Testing;
 
 namespace CommandSurfacer.ConsoleApp;
 
@@ -11,7 +13,8 @@ internal static class Program
     private static void Main(string[] args) => MainAsync(args).GetAwaiter().GetResult();
     private static async Task MainAsync(string[] args)
     {
-        args = new string[] { "" };
+        if (System.Diagnostics.Debugger.IsAttached)
+            args = new string[] { "" };
 
         var client = Client.Create()
             .AddInteractiveConsole(options =>
@@ -27,6 +30,9 @@ internal static class Program
         
         await client.RunAsync(args);
     }
+
+
+    
 }
 
 [Group("test-group")]
