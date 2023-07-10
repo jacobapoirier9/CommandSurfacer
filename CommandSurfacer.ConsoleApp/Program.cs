@@ -3,6 +3,8 @@ using CommandSurfacer.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text;
+using static CommandSurfacer.ConsoleApp.Testing;
 
 namespace CommandSurfacer.ConsoleApp;
 
@@ -28,6 +30,9 @@ internal static class Program
         
         await client.RunAsync(args);
     }
+
+
+    
 }
 
 [Group("test-group")]

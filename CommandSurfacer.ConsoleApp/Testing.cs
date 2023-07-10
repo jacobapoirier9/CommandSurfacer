@@ -1,174 +1,98 @@
-﻿using System.Collections;
+﻿using CommandSurfacer.Services;
+using System.Collections;
+using System.Text;
 
 namespace CommandSurfacer.ConsoleApp;
 
 internal static class Testing
 {
+    private static void Log(string message, params object[] args) => Console.WriteLine(DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.ffffff") + " " + message, args);
     public static void RunMain(string[] args)
     {
-        WriteToConsole("INPUT", args);
-
-        args = CorrectBrokenValues(args);
-        WriteToConsole("OUTPUT", args);
-
-        return;
-
-        var array = new string[]
-        {
-            "test",
-            "\"D:\\", " test.txt\"",
-            "'D:\\", " test.txt'"
-        };
-
-        WriteToConsole("INPUT", array);
-
-        var output = CorrectBrokenValues(array);
-        WriteToConsole("OUTPUT", output);
-
-        return;
     }
 
-    private static void WriteToConsole(string message, string[] input)
+    private static bool ContainsAny(this string input, string[] options, out string found) =>
+        AnyStringsOperation(input, options, out found, (str, option) => str.Contains(option, StringComparison.OrdinalIgnoreCase));
+
+    private static bool StartsWithAny(this string input, string[] options, out string found) =>
+        AnyStringsOperation(input, options, out found, (str, option) => str.StartsWith(option, StringComparison.OrdinalIgnoreCase));
+
+    private static bool EndsWithAny(this string input, string[] options, out string found) =>
+        AnyStringsOperation(input, options, out found, (str, option) => str.EndsWith(option, StringComparison.OrdinalIgnoreCase));
+
+    private static bool AnyStringsOperation(string input, string[] options, out string found, Func<string, string, bool> condition)
     {
-        Console.WriteLine(message);
-
-        foreach (var str in input)
-            Console.WriteLine(str);
-
-        Console.WriteLine();
-        Console.WriteLine();
-        Console.WriteLine();
-        Console.WriteLine();
-    }
-
-    private static void Log(string message, params object[] args) => Console.WriteLine(DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.ffffff") + " " + message, args);
-
-    private static string[] CorrectBrokenValues(string[] input)
-    {
-        var result = new List<string>();
-
-        var allowedWrapStrings = new char[] { '"', '\'' };
-
-        var wrap = default(char?);
-        var open = default(bool);
-
-        var correctedValue = string.Empty;
-        for (var i = 0; i < input.Length; i++)
+        for (var i = 0; i < options.Length; i++)
         {
-            var currentValue = input[i];
-            Log("Current value {0}", currentValue);
+            var option = options[i];
 
-            if (StartsWithAny(currentValue, allowedWrapStrings, out var startsWith))
+            if (condition.Invoke(input, option))
             {
-                Log("Starts with {0}", startsWith);
-
-                open = true;
-
-                wrap = startsWith;
-                currentValue = currentValue.TrimStart(startsWith);
-
-                correctedValue += currentValue;
-
-                if (EndsWithAny(correctedValue, allowedWrapStrings, out var endsWith) && wrap == endsWith)
-                {
-                    Log("Ends with {0}", endsWith);
-
-                    open = false;
-
-                    wrap = default(char?);
-                    correctedValue = correctedValue.TrimEnd(endsWith);
-
-                    result.Add(correctedValue);
-                    correctedValue = string.Empty;
-                }
-            }
-            else if (open)
-            {
-                if (EndsWithAny(currentValue, allowedWrapStrings, out var endsWith) && wrap == endsWith)
-                {
-                    Log("Ends with {0}", endsWith);
-
-                    open = false;
-
-                    wrap = default(char?);
-                    currentValue = currentValue.TrimEnd(endsWith);
-
-                    correctedValue += currentValue;
-
-                    result.Add(correctedValue);
-                    correctedValue = string.Empty;
-                }
-                else
-                {
-                    Log("Middle");
-                    correctedValue += currentValue;
-                }
-            }
-            else
-            {
-                result.Add(currentValue);
-            }
-
-
-            //if (StartsWithAny(currentValue, allowedWrapStrings, out var startsWith))
-            //{
-            //    open = true;
-
-            //    wrap = startsWith;
-            //    currentValue = currentValue.TrimStart(startsWith);
-
-            //    correctedValue += currentValue;
-            //}
-
-
-            //if (open && EndsWithAny(currentValue, allowedWrapStrings, out var endsWith) && wrap == endsWith)
-            //{
-            //    open = false;
-
-            //    wrap = default(char?);
-            //    currentValue = currentValue.TrimEnd(endsWith);
-
-            //    correctedValue += currentValue;
-
-            //    result.Add(correctedValue);
-            //    correctedValue = string.Empty;
-            //}
-            //else
-            //{
-            //    open = false;
-
-            //    correctedValue += currentValue;
-
-            //    result.Add(correctedValue);
-            //    correctedValue = string.Empty;
-            //}
-        }
-
-        return result.ToArray();
-    }
-
-    private static bool StartsWithAny(string input, char[] search, out char found) => SearchString(input, search, out found, (s, c) => s.StartsWith(c));
-    private static bool EndsWithAny(string input, char[] search, out char found) => SearchString(input, search, out found, (s, c) => s.EndsWith(c));
-    private static bool Contains(string input, char[] search, out char found) => SearchString(input, search, out found, (s, c) => s.Contains(c));
-
-    private static bool SearchString(string input, char[] search, out char found, Func<string, char, bool> evaluation)
-    {
-        for (var i = 0; i < search.Length; i++)
-        {
-            var currentSearchFor = search[i];
-
-            if (evaluation(input, currentSearchFor))
-            {
-                found = currentSearchFor;
+                found = option;
                 return true;
             }
         }
 
-        found = default(char);
+        found = null;
         return false;
     }
 
 
+    private static List<string> ParseArgumentList(string input)
+    {
+        var list = new List<string>();
+
+        // Step 1
+        if (string.IsNullOrWhiteSpace(input))
+            return list;
+
+        var current = new StringBuilder();
+        var quotingCharacter = default(char?);
+
+        // Step 2
+        for (var i = 0; i < input.Length; i++)
+        {
+            var character = input[i];
+
+            if (new char[] { '"', '\'' }.Contains(character))
+            {
+                if (quotingCharacter.HasValue)
+                {
+                    list.Add(current.ToString());
+                    current.Clear();
+                    quotingCharacter = default(char?);
+                }
+                else
+                {
+                    quotingCharacter = character;
+                }
+            }
+            else if (character == ' ')
+            {
+                if (quotingCharacter.HasValue)
+                {
+                    current.Append(character);
+                }
+                else if (current.Length > 0)
+                {
+                    list.Add(current.ToString());
+                    current.Clear();
+                }
+            }
+            else
+            {
+                current.Append(character);
+            }
+        }
+
+        // Step 3
+        if (current.Length > 0)
+            list.Add(current.ToString());
+
+        return list;
+    }
+
+    private static Arguments ParseArguments(string input) => ParseArguments(ParseArgumentList(input).ToArray());
     private static Arguments ParseArguments(string[] array)
     {
         var list = new List<string>();
@@ -210,63 +134,22 @@ internal static class Testing
         };
     }
 
-    public class Arguments : IEnumerable<string>
-    {
-        public IEnumerable<string> Keys => Dictionary.Keys;
-        public IEnumerable<string> Values => List.Concat(Dictionary.SelectMany(kvp => kvp.Value));
-
-
-        public List<string> List { get; set; }
-
-        public Dictionary<string, List<string>> Dictionary { get; set; }
-
-
-        public IEnumerator<string> GetEnumerator() => Values.GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => Values.GetEnumerator();
-    }
-
-    private static bool ContainsAny(string input, string[] options, out string found) =>
-        AnyStringsOperation(input, options, out found, (str, option) => str.Contains(option, StringComparison.OrdinalIgnoreCase));
-
-    private static bool StartsWithAny(string input, string[] options, out string found) =>
-        AnyStringsOperation(input, options, out found, (str, option) => str.StartsWith(option, StringComparison.OrdinalIgnoreCase));
-
-    private static bool AnyStringsOperation(string input, string[] options, out string found, Func<string, string, bool> condition)
-    {
-        for (var i = 0; i < options.Length; i++)
-        {
-            var option = options[i];
-
-            if (condition.Invoke(input, option))
-            {
-                found = option;
-                return true;
-            }
-        }
-
-        found = null;
-        return false;
-    }
-
-    private static string[] ParseValues(string[] array, Type targetType, SurfaceAttribute surfaceAttribute)
-    {
-        var prefixes = new string[] { "--", "-", "\\" };
-
-        var sub = ArrayUtils.Slice(array,
-            item => ArrayUtils.Cartesian(prefixes, surfaceAttribute.Name).Contains(item, StringComparer.OrdinalIgnoreCase),
-            item => prefixes.Any(prefix => item.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)));
-
-        return sub;
-    }
 }
 
-/*
- * 
-        var currentProcess = Process.GetCurrentProcess();
-        var output = processService.RunProcess("powershell.exe", $"-Command {{ Get-CimInstance Win32_Process -Filter \"ProcessId = '{currentProcess.Id}'\" | select ParentProcessId }}");
- */
+public class Arguments : IEnumerable<string>
+{
+    public IEnumerable<string> Keys => Dictionary.Keys;
+    public IEnumerable<string> Values => List.Concat(Dictionary.SelectMany(kvp => kvp.Value));
 
 
+    public List<string> List { get; set; }
+
+    public Dictionary<string, List<string>> Dictionary { get; set; }
+
+
+    public IEnumerator<string> GetEnumerator() => Values.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => Values.GetEnumerator();
+}
 
 internal static class ArrayUtils
 {
