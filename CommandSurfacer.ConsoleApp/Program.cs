@@ -16,6 +16,10 @@ internal static class Program
         if (System.Diagnostics.Debugger.IsAttached)
             args = new string[] { "" };
 
+        var betterArgsParser = new BetterArgsParser() as IBetterArgsParser;
+        betterArgsParser.Parse("'arg,1', 'arg,2', arg,3',");
+
+        return;
         var client = Client.Create()
             .AddInteractiveConsole(options =>
             {
