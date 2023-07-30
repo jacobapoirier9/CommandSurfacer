@@ -120,8 +120,8 @@ public class ArgsParser : IArgsParser
     {
         var commandPrefixes = new string[] { "--", "-", "/" };
 
-        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>test-name)(?<Separator>[ :=]+)(?<Value>[\w:\\.-{}]+|"[\w\s:\\.-{}',]*"|'[\w\s:\\.-{}",]*') *|$
-        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?<Value>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}',]*""|'[\w\s:\\.-{{}}"",]*') *|$";
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>test-name)(?<Separator>[ :=]+)(?<Value>[^ "']+|"[^"]*"|'[^']*') *|$
+        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?<Value>[^ ""']+|""[^""]*""|'[^']*') *|$";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
@@ -225,7 +225,7 @@ public class ArgsParser : IArgsParser
             response.Add(value);
         }
 
-        var pattern = @"(?<ArgumentValue>[\w:\\.-{{}}]+|""[\w\s:\\.-{{}}]*""|'[\w\s:\\.-{{}}]*')";
+        var pattern = @"(?<ArgumentValue>[^ ""']+|""[^""]*""|'[^']*')";
         var regex = new Regex(pattern);
         var matches = regex.Matches(input).Cast<Match>().ToList();
 
