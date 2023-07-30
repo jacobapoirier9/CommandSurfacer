@@ -120,8 +120,8 @@ public class ArgsParser : IArgsParser
     {
         var commandPrefixes = new string[] { "--", "-", "/" };
 
-        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>test-name)(?<Separator>[ :=]+)(?<Value>[^ "']+|"[^"]*"|'[^']*') *|$
-        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?<Value>[^ ""']+|""[^""]*""|'[^']*') *|$";
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>test-name)(?<Separator>[ :=]+)(?!--|-|\/)(?<Value>[^ "']+|"[^"]*"|'[^']*') *|$
+        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?!{ToRegexPattern(commandPrefixes)})(?<Value>[^ ""']+|""[^""]*""|'[^']*') *|$";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
