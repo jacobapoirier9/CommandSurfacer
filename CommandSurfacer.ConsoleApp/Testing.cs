@@ -1,5 +1,4 @@
 ﻿using CommandSurfacer.Services;
-using System.Collections;
 using System.Text;
 
 namespace CommandSurfacer.ConsoleApp;
@@ -38,7 +37,7 @@ internal static class Testing
     }
 
 
-    private static List<string> ParseArgumentList(string input)
+    private static List<string> ParseCommandLine(string input)
     {
         var list = new List<string>();
 
@@ -92,7 +91,7 @@ internal static class Testing
         return list;
     }
 
-    private static Arguments ParseArguments(string input) => ParseArguments(ParseArgumentList(input).ToArray());
+    private static Arguments ParseArguments(string input) => ParseArguments(ParseCommandLine(input).ToArray());
     private static Arguments ParseArguments(string[] array)
     {
         var list = new List<string>();
@@ -134,21 +133,6 @@ internal static class Testing
         };
     }
 
-}
-
-public class Arguments : IEnumerable<string>
-{
-    public IEnumerable<string> Keys => Dictionary.Keys;
-    public IEnumerable<string> Values => List.Concat(Dictionary.SelectMany(kvp => kvp.Value));
-
-
-    public List<string> List { get; set; }
-
-    public Dictionary<string, List<string>> Dictionary { get; set; }
-
-
-    public IEnumerator<string> GetEnumerator() => Values.GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => Values.GetEnumerator();
 }
 
 internal static class ArrayUtils

@@ -1,4 +1,6 @@
-﻿namespace CommandSurfacer.Services;
+﻿using Microsoft.Extensions.DependencyInjection;
+
+namespace CommandSurfacer.Services;
 
 internal static class Utils
 {
@@ -27,4 +29,37 @@ internal static class Utils
     }
 
     public static bool IsTrue(this bool? value) => value.HasValue && value.Value;
+
+
+    internal static bool ContainsAny(this string input, string[] options, out string found) =>
+        AnyStringsOperation(input, options, out found, (str, option) => str.Contains(option, StringComparison.OrdinalIgnoreCase));
+
+    internal static bool StartsWithAny(this string input, string[] options, out string found) =>
+        AnyStringsOperation(input, options, out found, (str, option) => str.StartsWith(option, StringComparison.OrdinalIgnoreCase));
+
+    internal static bool EndsWithAny(this string input, string[] options, out string found) =>
+        AnyStringsOperation(input, options, out found, (str, option) => str.EndsWith(option, StringComparison.OrdinalIgnoreCase));
+
+    internal static bool AnyStringsOperation(string input, string[] options, out string found, Func<string, string, bool> condition)
+    {
+        for (var i = 0; i < options.Length; i++)
+        {
+            var option = options[i];
+
+            if (condition.Invoke(input, option))
+            {
+                found = option;
+                return true;
+            }
+        }
+
+        found = null;
+        return false;
+    }
+
+    internal static bool TryGetService<T>(this IServiceProvider serviceProvider, out T service)
+    {
+        service = serviceProvider.GetService<T>();
+        return service is not null;
+    }
 }
