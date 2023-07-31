@@ -1,6 +1,6 @@
-﻿namespace CommandSurfacer.Services;
+﻿//namespace CommandSurfacer.Services;
 
-public interface IBetterArgsParser
-{
-    public Arguments Parse(string input);
-}
+//public interface IBetterArgsParser
+//{
+//    public Arguments Parse(string input);
+//}

@@ -78,7 +78,7 @@ public class CommandSurfacerTestFixture : IDisposable
 
                 services.AddSingleton<IStringConverter, StringConverter>();
                 services.AddSingleton<IArgsParser, ArgsParser>();
-                services.AddSingleton<IBetterArgsParser, BetterArgsParser>();
+                //services.AddSingleton<IBetterArgsParser, BetterArgsParser>();
                 services.AddSingleton<ICommandRunner, CommandRunner>();
 
                 services.AddSingleton<InjectedService>();
