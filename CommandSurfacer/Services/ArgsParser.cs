@@ -1,4 +1,8 @@
-﻿using System.Data;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -96,7 +100,7 @@ public class ArgsParser : IArgsParser
         var allowedBooleanValues = allowedTrueValues.Concat(allowedFalseValues);
         var commandPrefixes = new string[] { "--", "-", "/" };
 
-        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>test-name)(?<Separator>[ :=]+(?<Value>false|true|yes|no|y|n|1|0)? *|$)
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>method-name)(?<Separator>[ :=]+(?<Value>false|true|yes|no|y|n|1|0)? *|$)
         var pattern = @$"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+(?<Value>{ToRegexPattern(allowedBooleanValues)})? *|$)";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
@@ -120,7 +124,7 @@ public class ArgsParser : IArgsParser
     {
         var commandPrefixes = new string[] { "--", "-", "/" };
 
-        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>test-name)(?<Separator>[ :=]+)(?!--|-|\/)(?<Value>[^ "']+|"[^"]*"|'[^']*') *|$
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>method-name)(?<Separator>[ :=]+)(?!--|-|\/)(?<Value>[^ "']+|"[^"]*"|'[^']*') *|$
         var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?!{ToRegexPattern(commandPrefixes)})(?<Value>[^ ""']+|""[^""]*""|'[^']*') *|$";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
@@ -144,6 +148,28 @@ public class ArgsParser : IArgsParser
         return null;
     }
 
+    public IEnumerable<string> ParseEnumerableValue(ref string input, SurfaceAttribute surfaceAttribute = null)
+    {
+        var commandPrefixes = new string[] { "--", "-", "/" };
+
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>method-name)(?<Separator>[ :=]+)(?<RawValue>((?!--|-|\/).)*)
+        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?<RawValue>((?!{ToRegexPattern(commandPrefixes)}).)*)";
+        var regex = new Regex(pattern, RegexOptions.IgnoreCase);
+        var match = regex.Match(input);
+
+        if (match.Success)
+        {
+            input = regex.Replace(input, m => string.Empty).Trim(' ');
+
+            var rawValue = match.Groups["RawValue"].Value;
+
+            var values = ParseRemainingStringValues(ref rawValue);
+            return values;
+        }
+
+        return default;
+    }
+
     public object ParseTypedValue(ref string input, Type targetType, SurfaceAttribute surfaceAttribute = null)
     {
         if (_stringConverter.SupportsType(targetType))
@@ -159,6 +185,34 @@ public class ArgsParser : IArgsParser
                 return null;
             else
                 return _stringConverter.Convert(targetType, stringValue);
+        }
+        else if (targetType.IsAssignableTo(typeof(IEnumerable<object>)))
+        {
+            var underlyingType = targetType.GetElementType() ?? targetType.GetGenericArguments().Single();
+
+            if (_stringConverter.SupportsType(underlyingType))
+            {
+                var enumerable = ParseEnumerableValue(ref input, surfaceAttribute)
+                    .Select(value => _stringConverter.Convert(underlyingType, value));
+
+                if (targetType.IsAssignableTo(typeof(Array)))
+                {
+                    var array = Array.CreateInstance(underlyingType, enumerable.Count());
+
+                    for (var i = 0; i < array.Length; i++)
+                        array.SetValue(enumerable.ElementAt(i), i);
+
+                    return array;
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
         }
         
         var instance = Activator.CreateInstance(targetType);
@@ -225,26 +279,51 @@ public class ArgsParser : IArgsParser
             response.Add(value);
         }
 
-        var pattern = @"(?<ArgumentValue>[^ ""']+|""[^""]*""|'[^']*')";
-        var regex = new Regex(pattern);
-        var matches = regex.Matches(input).Cast<Match>().ToList();
+        var remainingStrings = ParseRemainingStringValues(ref input);
 
-        var matchesIndex = 0;
+        var index = 0;
         for (var i = 0; i < response.Count; i++)
         {
             if (response[i] is not null)
                 continue;
 
-            var match = matches.ElementAtOrDefault(matchesIndex);
-            if (match is not null)
+            var value = remainingStrings.ElementAtOrDefault(index);
+            if (value is not null)
             {
-                response[i] = _stringConverter.Convert(parameters[i].ParameterType, match.Value.Trim('\'', '"', ' '));
-                matchesIndex++;
-
-                input = Utils.ReplaceFirstOccurance(input, match.Value, string.Empty).Trim('\'', '"', ' ');
+                response[i] = _stringConverter.Convert(parameters[i].ParameterType, value);
+                index++;
             }
         }
 
         return response.ToArray();
+    }
+
+    private IEnumerable<string> ParseRemainingStringValues(ref string input)
+    {
+        var pattern = "(?!,)([^ ,\"']+|\"[^\"]*\"|'[^']*')";
+        var regex = new Regex(pattern);
+        var matches = regex.Matches(input).Cast<Match>();
+
+        if (matches.All(m => m.Success))
+        {
+            input = regex.Replace(input, m => string.Empty).Trim(' ');
+
+            var values = matches.Select(m =>
+            {
+                var value = m.Value;
+
+                if (
+                    (value.StartsWith('"') && value.EndsWith('"')) ||
+                    (value.StartsWith("'") && value.EndsWith("'"))
+                )
+                    value = value.Substring(1, value.Length - 2);
+
+                return value;
+            });
+
+            return values;
+        }
+
+        throw new ApplicationException();
     }
 }

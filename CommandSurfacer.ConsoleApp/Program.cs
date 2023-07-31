@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using static CommandSurfacer.ConsoleApp.Testing;
 
 namespace CommandSurfacer.ConsoleApp;
@@ -14,12 +15,8 @@ internal static class Program
     private static async Task MainAsync(string[] args)
     {
         if (System.Diagnostics.Debugger.IsAttached)
-            args = new string[] { "" };
+            args = new string[] { "test --names Jake, JJ, Kam --notused" };
 
-        var betterArgsParser = new BetterArgsParser() as IBetterArgsParser;
-        betterArgsParser.Parse("'arg,1', 'arg,2', arg,3',");
-
-        return;
         var client = Client.Create()
             .AddInteractiveConsole(options =>
             {
@@ -31,19 +28,45 @@ internal static class Program
                 services.AddSingleton<TestService>();
                 services.AddSingleton<Test2Service>();
             });
-        
+
         await client.RunAsync(args);
     }
 
+    private static IEnumerable<string> ParseAnonymousValues(ref string input)
+    {
+        var pattern = "(?!,)([^ \"']+|\"[^\"]*\"|'[^']*')";
+        var regex = new Regex(pattern);
+        var matches = regex.Matches(input).Cast<Match>();
 
-    
+        if (matches.All(m => m.Success))
+        {
+            input = regex.Replace(input, m => string.Empty);
+
+            var values = matches.Select(m =>
+            {
+                var value = m.Value;
+
+                if (
+                    (value.StartsWith('"') && value.EndsWith('"')) ||
+                    (value.StartsWith("'") && value.EndsWith("'"))
+                )
+                    value = value.Substring(1, value.Length - 2);
+
+                return value;
+            });
+
+            return values;
+        }
+
+        throw new ApplicationException();
+    }
 }
 
 [Group("test-group")]
 public class TestService
 {
     [Surface("test")]
-    public void Test()
+    public void Test(IList<string> names)
     {
 
     }
