@@ -87,7 +87,7 @@ public class ArgsParser : IArgsParser
         var results = filtered.ToList();
 
         if (results.Count != 1)
-            throw new ResolutionException(results.Count, _commandSurfaces.Count);
+            throw new ApplicationException($"Found {results.Count} out of {_commandSurfaces.Count} surfaces to execute.");
 
         return results.First();
     }
