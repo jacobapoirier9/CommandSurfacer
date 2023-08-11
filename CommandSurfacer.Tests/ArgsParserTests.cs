@@ -785,4 +785,26 @@ public class ArgsParserTests : BaseTests
         public void MethodThree(string name, int age, string anonymous1, string anonymous3) { }
     }
     #endregion
+
+    #region Parse Enumerable Value
+    [Theory]
+    [InlineData(
+        "--test-name 'Jake' D:\\CoolFilePath.txt \'D:\\Not Cool File Path.txt\' --notused", 
+        new string[] { "Jake", "D:\\CoolFilePath.txt", "D:\\Not Cool File Path.txt" },
+        "--notused")]
+    [InlineData(
+        "--test-name \"--fake1\" '--fake2' --notused",
+        new string[] { "--fake1", "--fake2" },
+        "--notused")]
+    [InlineData(
+        "--test-name \"Double\" 'Single' none \"--double\" '--single' --drop",
+        new string[] { "Double", "Single", "none", "--double", "--single" },
+        "--drop")]
+    public void ParseEnumerableValue(string input, string[] expected, string remaining)
+    {
+        var output = _argsParser.ParseEnumerableValue(ref input, new SurfaceAttribute("test-name"));
+        Assert.Equal(expected, output);
+        Assert.Equal(remaining, input);
+    }
+    #endregion
 }

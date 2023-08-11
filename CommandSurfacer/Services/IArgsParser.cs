@@ -13,6 +13,8 @@ public interface IArgsParser
 
     public string ParseStringValue(ref string input, SurfaceAttribute surfaceAttribute = null);
 
+    public IEnumerable<string> ParseEnumerableValue(ref string input, SurfaceAttribute surfaceAttribute = null);
+
     public T ParseTypedValue<T>(ref string input, SurfaceAttribute surfaceAttribute = null) => (T)ParseTypedValue(ref input, typeof(T), surfaceAttribute);
     public object ParseTypedValue(ref string input, Type targetType, SurfaceAttribute surfaceAttribute = null);
 

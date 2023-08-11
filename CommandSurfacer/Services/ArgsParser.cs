@@ -100,7 +100,7 @@ public class ArgsParser : IArgsParser
         var allowedBooleanValues = allowedTrueValues.Concat(allowedFalseValues);
         var commandPrefixes = new string[] { "--", "-", "/" };
 
-        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>method-name)(?<Separator>[ :=]+(?<Value>false|true|yes|no|y|n|1|0)? *|$)
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+(?<Value>false|true|yes|no|y|n|1|0)? *|$)
         var pattern = @$"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+(?<Value>{ToRegexPattern(allowedBooleanValues)})? *|$)";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
@@ -124,7 +124,8 @@ public class ArgsParser : IArgsParser
     {
         var commandPrefixes = new string[] { "--", "-", "/" };
 
-        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>method-name)(?<Separator>[ :=]+)(?!--|-|\/)(?<Value>[^ "']+|"[^"]*"|'[^']*') *|$
+        // TOOD: Use \k<Quote> backreference
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?!--|-|\/)(?<Value>[^ "']+|"[^"]*"|'[^']*') *|$
         var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?!{ToRegexPattern(commandPrefixes)})(?<Value>[^ ""']+|""[^""]*""|'[^']*') *|$";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
@@ -152,8 +153,8 @@ public class ArgsParser : IArgsParser
     {
         var commandPrefixes = new string[] { "--", "-", "/" };
 
-        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>method-name)(?<Separator>[ :=]+)(?<RawValue>((?!--|-|\/).)*)
-        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?<RawValue>((?!{ToRegexPattern(commandPrefixes)}).)*)";
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?<RawValue>((?! (--|-|\/)).)*)
+        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?<RawValue>((?! ({ToRegexPattern(commandPrefixes)})).)*)";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
