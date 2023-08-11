@@ -161,6 +161,8 @@ public class ArgsParser : IArgsParser
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?<RawValue>((?!(?<=["' ]) (--|-|\/)).)*)
 
         // FLAWLESS (At the moment)
+        // FLAW: If a string does not have any quotes at all, it will pick up the terminating string after.
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?<RawValue>((?!(?<=["' ]) (--|-|\/)).)*)
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?<RawValue>((?!(?<=["']) * (--|-|\/)).)*)
         var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)})(?<Separator>[ :=]+)(?<RawValue>((?!(?<=[""']) * ({ToRegexPattern(commandPrefixes)})).)*)";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
@@ -195,7 +197,8 @@ public class ArgsParser : IArgsParser
             else
                 return _stringConverter.Convert(targetType, stringValue);
         }
-        else if (targetType.IsAssignableTo(typeof(IEnumerable<object>)))
+
+        else if (targetType.IsAssignableTo(typeof(IEnumerable)))
         {
             var underlyingType = targetType.GetElementType() ?? targetType.GetGenericArguments().Single();
 
@@ -215,6 +218,16 @@ public class ArgsParser : IArgsParser
                 }
                 else
                 {
+                    var listType = typeof(IList<>).MakeGenericType(underlyingType);
+                    if (targetType.IsAssignableTo(listType))
+                    {
+                        var list = Activator.CreateInstance(targetType) as IList;
+                        foreach (var item in enumerable)
+                            list.Add(item);
+
+                        return list;
+                    }
+
                     throw new NotImplementedException();
                 }
             }
