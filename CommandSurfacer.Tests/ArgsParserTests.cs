@@ -800,6 +800,10 @@ public class ArgsParserTests : BaseTests
         "--test-name \"Double\" 'Single' none \"--double\" '--single' --drop",
         new string[] { "Double", "Single", "none", "--double", "--single" },
         "--drop")]
+    //[InlineData(
+    //    "--test-name \"Fake --Switch\"",
+    //    new string[] { "Fake --Switch"},
+    //    null)]
     public void ParseEnumerableValue(string input, string[] expected, string remaining)
     {
         var output = _argsParser.ParseEnumerableValue(ref input, new SurfaceAttribute("test-name"));

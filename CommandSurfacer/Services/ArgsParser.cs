@@ -153,6 +153,7 @@ public class ArgsParser : IArgsParser
     {
         var commandPrefixes = new string[] { "--", "-", "/" };
 
+        // TODO: The pattern stops when it detects a space character immediately follwed by a command prefix. This could potentially caused incorrect parsing, since any command prefix in a quoted string should be ignored.
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?<RawValue>((?! (--|-|\/)).)*)
         var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?<RawValue>((?! ({ToRegexPattern(commandPrefixes)})).)*)";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
