@@ -44,8 +44,8 @@ public class ArgsParser : IArgsParser
     }
 
     private static bool EqualsIgnoreCase(string left, string right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
-    private static string ToRegexPattern(IEnumerable<string> values) => string.Join('|', values.OrderByDescending(s => s.Length).Select(Regex.Escape));
-    private static string ToRegexPattern(params string[] values) => ToRegexPattern(values);
+    private static string ToRegexPattern(IEnumerable<string> values) => string.Join('|', values.Where(s => s is not null).OrderByDescending(s => s.Length).Select(Regex.Escape));
+    private static string ToRegexPattern(params string[] values) => ToRegexPattern(values.Cast<string>());
 
     public GroupAttribute ResolveGroupAttributeOrDefault(string input)
     {
@@ -154,9 +154,15 @@ public class ArgsParser : IArgsParser
     {
         var commandPrefixes = new string[] { "--", "-", "/" };
 
-        // TODO: The pattern stops when it detects a space character immediately follwed by a command prefix. This could potentially caused incorrect parsing, since any command prefix in a quoted string should be ignored.
+        // FLAW: Pattern will return if a space is followed by a command prefix, even in a quoted string.
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?<RawValue>((?! (--|-|\/)).)*)
-        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)})(?<Separator>[ :=]+)(?<RawValue>((?! ({ToRegexPattern(commandPrefixes)})).)*)";
+
+        // FLAW: Pattern will return if more than one space is followed by a command prefix even in a quoted string.
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?<RawValue>((?!(?<=["' ]) (--|-|\/)).)*)
+
+        // FLAWLESS (At the moment)
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?<RawValue>((?!(?<=["']) * (--|-|\/)).)*)
+        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)})(?<Separator>[ :=]+)(?<RawValue>((?!(?<=[""']) * ({ToRegexPattern(commandPrefixes)})).)*)";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 

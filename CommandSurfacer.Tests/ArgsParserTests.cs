@@ -797,13 +797,13 @@ public class ArgsParserTests : BaseTests
         new string[] { "--fake1", "--fake2" },
         "--notused")]
     [InlineData(
-        "--test-name \"Double\" 'Single' none \"--double\" '--single' --drop",
+        "--test-name \"Double\" 'Single' none \"--double\" '--single' --notused",
         new string[] { "Double", "Single", "none", "--double", "--single" },
-        "--drop")]
-    //[InlineData(
-    //    "--test-name \"Fake --Switch\"",
-    //    new string[] { "Fake --Switch"},
-    //    null)]
+        "--notused")]
+    [InlineData(
+        "--test-name \"Fake --Switch\"   '  Another    --Fake   -Switch    '         --notused",
+        new string[] { "Fake --Switch", "  Another    --Fake   -Switch    " },
+        "--notused")]
     public void ParseEnumerableValue(string input, string[] expected, string remaining)
     {
         var output = _argsParser.ParseEnumerableValue(ref input, new SurfaceAttribute("test-name"));
