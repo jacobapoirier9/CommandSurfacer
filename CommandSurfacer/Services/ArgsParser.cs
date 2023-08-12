@@ -150,9 +150,40 @@ public class ArgsParser : IArgsParser
         return null;
     }
 
+
+    // This is a cheeky work around to parse an enumerable value, as regex has proven extremely difficult for this piece.
     public IEnumerable<string> ParseEnumerableValue(ref string input, SurfaceAttribute surfaceAttribute = null)
     {
         var commandPrefixes = new string[] { "--", "-", "/" };
+
+        var pattern = @$"({ToRegexPattern(commandPrefixes)}){ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)}";
+        var regex = new Regex(pattern, RegexOptions.IgnoreCase);
+        var match = regex.Match(input);
+
+        if (!match.Success)
+            return default;
+
+        var switchName = match.Value;
+        var index = input.IndexOf(switchName);
+
+        var list = new List<string>();
+
+        // Enter an infinite loop and call ParseStringValue until it returns a null value (which means there are no more values provided).
+        while (true)
+        {
+            var value = ParseStringValue(ref input, surfaceAttribute);
+            if (string.IsNullOrEmpty(value))
+                break;
+
+            // Insert the switch name to its original position, as ParseStringValue removes it. This allows ParseStringValue to be called again.
+            input = input.Insert(index, switchName + " ");
+            list.Add(value);
+        }
+
+        // Remove the switch name one last time, and do not add it back.
+        ParsePresenceValue(ref input, typeof(bool), surfaceAttribute);
+
+        return list;
 
         // FLAW: Pattern will return if a space is followed by a command prefix, even in a quoted string.
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?<RawValue>((?! (--|-|\/)).)*)
@@ -164,23 +195,28 @@ public class ArgsParser : IArgsParser
         // FLAW: If a string does not have any quotes at all, it will pick up the terminating string after.
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?<RawValue>((?!(?<=["' ]) (--|-|\/)).)*)
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?<RawValue>((?!(?<=["']) * (--|-|\/)).)*)
-        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)})(?<Separator>[ :=]+)(?<RawValue>((?!(?<=[""']) * ({ToRegexPattern(commandPrefixes)})).)*)";
-        var regex = new Regex(pattern, RegexOptions.IgnoreCase);
-        var match = regex.Match(input);
 
-        if (match.Success)
-        {
-            input = regex.Replace(input, m => string.Empty).Trim(' ');
+        // Chat GPT Options (None of which are great)
+        // Best Chat GPT: (?<=\s|^)(?<Prefix>--|-|\/)(?<Name>\w+)(?<Separator>[ :=]+)(?:(?<QuotedValue>'[^']*'|"[^"]*")|(?<UnquotedValue>[^"'\s]+))
+        // "(?:\\.|[^"])*"|'(?:\\.|[^'])*'|(?!foo)[^"'f]+|f(?!oo)
+        // "(?:\\.|[^"])*"|'(?:\\.|[^'])*'|-[^"-]*
 
-            var rawValue = match.Groups["RawValue"].Value;
+        //var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)})(?<Separator>[ :=]+)(?<RawValue>((?!(?<=[""']) * ({ToRegexPattern(commandPrefixes)})).)*)";
+        //var regex = new Regex(pattern, RegexOptions.IgnoreCase);
+        //var match = regex.Match(input);
 
-            var values = ParseRemainingStringValues(ref rawValue);
-            return values;
-        }
+        //if (match.Success)
+        //{
+        //    input = regex.Replace(input, m => string.Empty).Trim(' ');
 
-        return default;
+        //    var rawValue = match.Groups["RawValue"].Value;
+
+        //    var values = ParseRemainingStringValues(ref rawValue);
+        //    return values;
+        //}
+
+        //return default;
     }
-
     public object ParseTypedValue(ref string input, Type targetType, SurfaceAttribute surfaceAttribute = null)
     {
         if (_stringConverter.SupportsType(targetType))
