@@ -15,12 +15,6 @@ internal static class Program
     private static void Main(string[] args) => MainAsync(args).GetAwaiter().GetResult();
     private static async Task MainAsync(string[] args)
     {
-        DumpTypeInformation(typeof(int[]));
-        DumpTypeInformation(typeof(string[]));
-        DumpTypeInformation(typeof(object[]));
-
-        //return;
-
         if (System.Diagnostics.Debugger.IsAttached)
             args = new string[] { "test --names Jake, JJ, Kam --notused" };
 
@@ -37,23 +31,6 @@ internal static class Program
             });
 
         await client.RunAsync(args);
-    }
-
-    private static void DumpTypeInformation(Type targetType)
-    {
-        Console.WriteLine("Breakdown of {0}", targetType);
-        Console.WriteLine("IEnumerable<object>: {0}", targetType.IsAssignableTo(typeof(IEnumerable<object>)));
-        Console.WriteLine("IEnumerable<>: {0}", targetType.IsAssignableTo(typeof(IEnumerable<>)));
-        Console.WriteLine("IEnumerable: {0}", targetType.IsAssignableTo(typeof(IEnumerable)));
-        Console.WriteLine();
-
-        foreach (var @interface in targetType.GetInterfaces())
-            Console.WriteLine(@interface);
-
-
-        Console.WriteLine();
-        Console.WriteLine();
-
     }
 }
 
