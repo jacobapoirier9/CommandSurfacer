@@ -1,6 +1,7 @@
 ﻿using CommandSurfacer.Models;
 using CommandSurfacer.Services;
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -31,44 +32,16 @@ internal static class Program
 
         await client.RunAsync(args);
     }
-
-    private static IEnumerable<string> ParseAnonymousValues(ref string input)
-    {
-        var pattern = "(?!,)([^ \"']+|\"[^\"]*\"|'[^']*')";
-        var regex = new Regex(pattern);
-        var matches = regex.Matches(input).Cast<Match>();
-
-        if (matches.All(m => m.Success))
-        {
-            input = regex.Replace(input, m => string.Empty);
-
-            var values = matches.Select(m =>
-            {
-                var value = m.Value;
-
-                if (
-                    (value.StartsWith('"') && value.EndsWith('"')) ||
-                    (value.StartsWith("'") && value.EndsWith("'"))
-                )
-                    value = value.Substring(1, value.Length - 2);
-
-                return value;
-            });
-
-            return values;
-        }
-
-        throw new ApplicationException();
-    }
 }
 
 [Group("test-group")]
 public class TestService
 {
     [Surface("test")]
-    public void Test(IList<string> names)
+    public void Test(List<string> names)
     {
-
+        foreach (var name in names)
+            Console.WriteLine(names);
     }
 }
 

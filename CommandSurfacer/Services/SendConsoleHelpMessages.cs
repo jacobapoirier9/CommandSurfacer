@@ -1,4 +1,5 @@
 ﻿using CommandSurfacer.Models;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Reflection;
@@ -13,12 +14,16 @@ public class SendConsoleHelpMessages : ISendHelpMessages
     private readonly IStringConverter _stringConverter;
     private readonly IServiceProvider _serviceProvider;
 
+    private readonly InteractiveConsoleOptions _consoleOptions;
+
     public SendConsoleHelpMessages(List<CommandSurface> commandSurfaces, IStringConverter stringConverter, IServiceProvider serviceProvider)
     {
         _commandSurfaces = commandSurfaces;
 
         _stringConverter = stringConverter;
         _serviceProvider = serviceProvider;
+
+        _consoleOptions = _serviceProvider.GetService<InteractiveConsoleOptions>();
     }
 
     private CommandSurfacerHelp CreateCommandSurfacerHelp()
@@ -52,7 +57,9 @@ public class SendConsoleHelpMessages : ISendHelpMessages
     private void AppendBanner(StringBuilder builder)
     {
         builder.AppendLine();
-        builder.AppendLine("  Begin help message");
+
+        if (_consoleOptions is not null && _consoleOptions.Banner is not null)
+            builder.AppendLine(_consoleOptions.Banner);
     }
 
     private void AppendGroupLine(StringBuilder builder, GroupAttribute group, int maxNameLength)

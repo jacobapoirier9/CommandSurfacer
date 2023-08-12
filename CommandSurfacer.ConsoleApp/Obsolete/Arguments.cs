@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace CommandSurfacer;
+namespace CommandSurfacer.ConsoleApp.Obsolete;
 
 public class Arguments : IEnumerable<string>
 {

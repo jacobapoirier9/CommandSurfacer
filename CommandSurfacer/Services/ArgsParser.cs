@@ -44,7 +44,8 @@ public class ArgsParser : IArgsParser
     }
 
     private static bool EqualsIgnoreCase(string left, string right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
-    private static string ToRegexPattern(IEnumerable<string> values) => string.Join('|', values.OrderByDescending(s => s.Length).Select(Regex.Escape));
+    private static string ToRegexPattern(IEnumerable<string> values) => string.Join('|', values.Where(s => s is not null).OrderByDescending(s => s.Length).Select(Regex.Escape));
+    private static string ToRegexPattern(params string[] values) => ToRegexPattern(values.Cast<string>());
 
     public GroupAttribute ResolveGroupAttributeOrDefault(string input)
     {
@@ -87,7 +88,7 @@ public class ArgsParser : IArgsParser
         var results = filtered.ToList();
 
         if (results.Count != 1)
-            throw new ResolutionException(results.Count, _commandSurfaces.Count);
+            throw new ApplicationException($"Found {results.Count} out of {_commandSurfaces.Count} surfaces to execute.");
 
         return results.First();
     }
@@ -100,8 +101,8 @@ public class ArgsParser : IArgsParser
         var allowedBooleanValues = allowedTrueValues.Concat(allowedFalseValues);
         var commandPrefixes = new string[] { "--", "-", "/" };
 
-        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>method-name)(?<Separator>[ :=]+(?<Value>false|true|yes|no|y|n|1|0)? *|$)
-        var pattern = @$"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+(?<Value>{ToRegexPattern(allowedBooleanValues)})? *|$)";
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+(?<Value>false|true|yes|no|y|n|1|0)? *|$)
+        var pattern = @$"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)})(?<Separator>[ :=]+(?<Value>{ToRegexPattern(allowedBooleanValues)})? *|$)";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
@@ -124,8 +125,9 @@ public class ArgsParser : IArgsParser
     {
         var commandPrefixes = new string[] { "--", "-", "/" };
 
-        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>method-name)(?<Separator>[ :=]+)(?!--|-|\/)(?<Value>[^ "']+|"[^"]*"|'[^']*') *|$
-        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?!{ToRegexPattern(commandPrefixes)})(?<Value>[^ ""']+|""[^""]*""|'[^']*') *|$";
+        // TOOD: Use \k<Quote> backreference
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?!--|-|\/)(?<Value>[^ "']+|"[^"]*"|'[^']*') *|$
+        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)})(?<Separator>[ :=]+)(?!{ToRegexPattern(commandPrefixes)})(?<Value>[^ ""']+|""[^""]*""|'[^']*') *|$";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
@@ -148,28 +150,73 @@ public class ArgsParser : IArgsParser
         return null;
     }
 
+
+    // This is a cheeky work around to parse an enumerable value, as regex has proven extremely difficult for this piece.
     public IEnumerable<string> ParseEnumerableValue(ref string input, SurfaceAttribute surfaceAttribute = null)
     {
         var commandPrefixes = new string[] { "--", "-", "/" };
 
-        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>method-name)(?<Separator>[ :=]+)(?<RawValue>((?!--|-|\/).)*)
-        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{Regex.Escape(surfaceAttribute.Name)})(?<Separator>[ :=]+)(?<RawValue>((?!{ToRegexPattern(commandPrefixes)}).)*)";
+        var pattern = @$"({ToRegexPattern(commandPrefixes)}){ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)}";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
-        if (match.Success)
+        if (!match.Success)
+            return default;
+
+        var switchName = match.Value;
+        var index = input.IndexOf(switchName);
+
+        var list = new List<string>();
+
+        // Enter an infinite loop and call ParseStringValue until it returns a null value (which means there are no more values provided).
+        while (true)
         {
-            input = regex.Replace(input, m => string.Empty).Trim(' ');
+            var value = ParseStringValue(ref input, surfaceAttribute);
+            if (string.IsNullOrEmpty(value))
+                break;
 
-            var rawValue = match.Groups["RawValue"].Value;
-
-            var values = ParseRemainingStringValues(ref rawValue);
-            return values;
+            // Insert the switch name to its original position, as ParseStringValue removes it. This allows ParseStringValue to be called again.
+            input = input.Insert(index, switchName + " ");
+            list.Add(value);
         }
 
-        return default;
-    }
+        // Remove the switch name one last time, and do not add it back.
+        ParsePresenceValue(ref input, typeof(bool), surfaceAttribute);
 
+        return list;
+
+        // FLAW: Pattern will return if a space is followed by a command prefix, even in a quoted string.
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?<RawValue>((?! (--|-|\/)).)*)
+
+        // FLAW: Pattern will return if more than one space is followed by a command prefix even in a quoted string.
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?<RawValue>((?!(?<=["' ]) (--|-|\/)).)*)
+
+        // FLAWLESS (At the moment)
+        // FLAW: If a string does not have any quotes at all, it will pick up the terminating string after.
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?<RawValue>((?!(?<=["' ]) (--|-|\/)).)*)
+        // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?<RawValue>((?!(?<=["']) * (--|-|\/)).)*)
+
+        // Chat GPT Options (None of which are great)
+        // Best Chat GPT: (?<=\s|^)(?<Prefix>--|-|\/)(?<Name>\w+)(?<Separator>[ :=]+)(?:(?<QuotedValue>'[^']*'|"[^"]*")|(?<UnquotedValue>[^"'\s]+))
+        // "(?:\\.|[^"])*"|'(?:\\.|[^'])*'|(?!foo)[^"'f]+|f(?!oo)
+        // "(?:\\.|[^"])*"|'(?:\\.|[^'])*'|-[^"-]*
+
+        //var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)})(?<Separator>[ :=]+)(?<RawValue>((?!(?<=[""']) * ({ToRegexPattern(commandPrefixes)})).)*)";
+        //var regex = new Regex(pattern, RegexOptions.IgnoreCase);
+        //var match = regex.Match(input);
+
+        //if (match.Success)
+        //{
+        //    input = regex.Replace(input, m => string.Empty).Trim(' ');
+
+        //    var rawValue = match.Groups["RawValue"].Value;
+
+        //    var values = ParseRemainingStringValues(ref rawValue);
+        //    return values;
+        //}
+
+        //return default;
+    }
     public object ParseTypedValue(ref string input, Type targetType, SurfaceAttribute surfaceAttribute = null)
     {
         if (_stringConverter.SupportsType(targetType))
@@ -186,7 +233,8 @@ public class ArgsParser : IArgsParser
             else
                 return _stringConverter.Convert(targetType, stringValue);
         }
-        else if (targetType.IsAssignableTo(typeof(IEnumerable<object>)))
+
+        else if (targetType.IsAssignableTo(typeof(IEnumerable)))
         {
             var underlyingType = targetType.GetElementType() ?? targetType.GetGenericArguments().Single();
 
@@ -206,6 +254,16 @@ public class ArgsParser : IArgsParser
                 }
                 else
                 {
+                    var listType = typeof(IList<>).MakeGenericType(underlyingType);
+                    if (targetType.IsAssignableTo(listType))
+                    {
+                        var list = Activator.CreateInstance(targetType) as IList;
+                        foreach (var item in enumerable)
+                            list.Add(item);
+
+                        return list;
+                    }
+
                     throw new NotImplementedException();
                 }
             }
