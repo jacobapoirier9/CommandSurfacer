@@ -22,21 +22,39 @@ internal static class Program
             .AddServices(services =>
             {
                 services.AddSingleton<TestService>();
+                services.AddSingleton<AppCmdService>();
             });
 
         await client.RunAsync(args);
     }
 }
 
+public class AppCmdService
+{
+    private static string _appCmd = @$"{Environment.GetEnvironmentVariable("WinDir")}\System32\inetsrv\appcmd.exe";
 
+    private readonly IProcessService _processService;
+    public AppCmdService(IProcessService processService)
+    {
+        _processService = processService;
+    }
 
+    public async Task<string> GetConfiguration(string configSection)
+    {
+        var command = string.Format("list config -section:{0}", configSection);
+        var result = await _processService.RunAsync(_appCmd, command);
 
+        return result.StandardOutputString;
+    }
+}
 
 public class TestService
 {
     [Surface("enter-test")]
-    public void Test(IProcessService processService)
+    public async Task EnterTestAsync(AppCmdService service)
     {
-        var process = processService.GetParentProcess();
+        var xml = await service.GetConfiguration("system.applicationHost/log");
+
+        Console.WriteLine(xml);
     }
 }
