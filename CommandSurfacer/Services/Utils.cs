@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using System.Text;
 
 namespace CommandSurfacer.Services;
 
@@ -61,5 +62,13 @@ internal static class Utils
     {
         service = serviceProvider.GetService<T>();
         return service is not null;
+    }
+
+    internal static string PowerShellEncodeCommand(this string input)
+    {
+        var bytes = Encoding.Unicode.GetBytes(input);
+        var encoded = Convert.ToBase64String(bytes);
+
+        return "-EncodedCommand " + encoded;
     }
 }

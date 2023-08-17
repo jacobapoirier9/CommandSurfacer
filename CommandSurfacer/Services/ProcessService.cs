@@ -6,6 +6,23 @@ namespace CommandSurfacer.Services;
 
 public class ProcessService : IProcessService
 {
+    private readonly IStringConverter _stringConverter;
+    public ProcessService(IStringConverter stringConverter)
+    {
+        _stringConverter = stringConverter;
+    }
+
+    public async Task<Process> GetParentProcessAsync()
+    {
+        var process = Process.GetCurrentProcess();
+        var completed = await RunAsync("powershell.exe", Utils.PowerShellEncodeCommand($"{{ Get-CimInstance Win32_Process -Filter \"ProcessId = '{process.Id}'\" | select ParentProcessId }}"));
+
+        var parentProcessId = _stringConverter.Convert<int>(completed.StandardOutputString);
+
+        var parentProcess = Process.GetProcessById(parentProcessId);
+        return parentProcess;
+    }
+
     public async Task<CompletedProcess> RunAsync(string exeFileName, string arguments)
     {
         var process = Process.Start(new ProcessStartInfo
@@ -32,9 +49,12 @@ public class ProcessService : IProcessService
 
         await process.WaitForExitAsync();
 
-        var completedProcess = process as CompletedProcess;
-        completedProcess.StandardOutputString = outputBuilder.ToString();
-        completedProcess.StandardErrorString = errorBuilder.ToString();
+        var completedProcess = new CompletedProcess
+        {
+            ExitCode = process.ExitCode,
+            StandardOutputString = outputBuilder.ToString(),
+            StandardErrorString = errorBuilder.ToString(),
+        };
 
         if (process.ExitCode > 0)
             throw new InvalidProgramException($"Process finished with exit code {completedProcess.ExitCode}: {completedProcess.StandardErrorString + completedProcess.StandardOutputString}");
