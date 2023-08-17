@@ -6,7 +6,7 @@ namespace CommandSurfacer.Services;
 
 public class ProcessService : IProcessService
 {
-    public RunProcessResponse RunProcess(string exeFileName, string arguments)
+    public async Task<CompletedProcess> RunAsync(string exeFileName, string arguments)
     {
         var process = Process.Start(new ProcessStartInfo
         {
@@ -30,26 +30,15 @@ public class ProcessService : IProcessService
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
-        process.WaitForExit();
+        await process.WaitForExitAsync();
 
-        var standardOutput = outputBuilder.ToString();
-        var standardError = errorBuilder.ToString();
+        var completedProcess = process as CompletedProcess;
+        completedProcess.StandardOutputString = outputBuilder.ToString();
+        completedProcess.StandardErrorString = errorBuilder.ToString();
 
-        var result = new RunProcessResponse
-        {
-            ExitCode = process.ExitCode,
-            StandardOutput = standardOutput.Any() ? standardOutput : null,
-            StandardError = standardOutput.Any() ? standardError : null
-        };
+        if (process.ExitCode > 0)
+            throw new InvalidProgramException($"Process finished with exit code {completedProcess.ExitCode}: {completedProcess.StandardErrorString + completedProcess.StandardOutputString}");
 
-        if (result.ExitCode > 0)
-            throw new InvalidProgramException($"Process finished with exit code {result.ExitCode}: {result.StandardError + result.StandardOutput}");
-
-        return result;
-    }
-
-    public async Task RunProcessAsync(string exeFileName, string arguments)
-    {
-        await new Task(() => RunProcess(exeFileName, arguments));
+        return completedProcess;
     }
 }
