@@ -240,8 +240,11 @@ public class ArgsParser : IArgsParser
 
             if (_stringConverter.SupportsType(underlyingType))
             {
-                var enumerable = ParseEnumerableValue(ref input, surfaceAttribute)
-                    .Select(value => _stringConverter.Convert(underlyingType, value));
+                var parsed = ParseEnumerableValue(ref input, surfaceAttribute);
+                if (parsed is null)
+                    return null;
+
+                var enumerable = parsed.Select(value => _stringConverter.Convert(underlyingType, value));
 
                 if (targetType.IsAssignableTo(typeof(Array)))
                 {

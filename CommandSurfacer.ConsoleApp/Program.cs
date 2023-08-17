@@ -51,8 +51,11 @@ public class AppCmdService
 public class TestService
 {
     [Surface("enter-test")]
-    public async Task EnterTestAsync(AppCmdService service)
+    public async Task EnterTestAsync(AppCmdService service, string[] items)
     {
+        foreach (var item in items)
+            Console.WriteLine(item);
+
         var xml = await service.GetConfiguration("system.applicationHost/log");
 
         Console.WriteLine(xml);
