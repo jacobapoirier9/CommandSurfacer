@@ -351,8 +351,15 @@ public class ArgsParser : IArgsParser
             var value = remainingStrings.ElementAtOrDefault(index);
             if (value is not null)
             {
-                response[i] = _stringConverter.Convert(parameters[i].ParameterType, value);
-                index++;
+                try
+                {
+                    response[i] = _stringConverter.Convert(parameters[i].ParameterType, value);
+                    index++;
+                }
+                catch (Exception) // If the value can not be converted, it was most likely not intended to be picked up in this position.
+                {
+
+                }
             }
         }
 

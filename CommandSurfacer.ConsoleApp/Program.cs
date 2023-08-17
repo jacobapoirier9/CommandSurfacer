@@ -10,7 +10,7 @@ internal static class Program
     {
         if (System.Diagnostics.Debugger.IsAttached)
         {
-            args = new string[] { "enter-test" };
+            args = new string[] { "enter-test jake apple tom" };
         }
 
         var client = Client.Create()
