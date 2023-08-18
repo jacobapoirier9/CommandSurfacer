@@ -82,6 +82,13 @@ public class CommandSurfacerTestFixture : IDisposable
                 services.AddSingleton<IArgsParser, ArgsParser>();
                 services.AddSingleton<ICommandRunner, CommandRunner>();
 
+                services.AddSingleton(new CliOptions
+                {
+                    SwitchPrefixes = new List<string> { "--", "-", "/" },
+                    ConvertStringsToTrue = new List<string> { "true", "yes", "y", "1" },
+                    ConvertStringsToFalse = new List<string> { "false", "no", "n", "0" },
+                });
+
                 services.AddSingleton<InjectedService>();
             })
             .Build();

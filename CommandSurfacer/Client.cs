@@ -50,6 +50,19 @@ public class Client
         return this;
     }
 
+    private readonly CliOptions _defaultCliOptions = new CliOptions
+    {
+        SwitchPrefixes = new List<string> { "--", "-", "/" },
+        ConvertStringsToTrue = new List<string> { "true", "yes", "y", "1" },
+        ConvertStringsToFalse = new List<string> { "false", "no", "n", "0" },
+    };
+
+    public Client Configure(Action<CliOptions> configure)
+    {
+        configure(_defaultCliOptions);
+        return this;
+    }
+
     public Client AddConsoleHelp()
     {
         _serviceCollection.AddSingleton<ISendHelpMessages, SendConsoleHelpMessages>();
@@ -69,6 +82,8 @@ public class Client
             _serviceCollection.AddSingleton<IArgsParser, ArgsParser>();
             _serviceCollection.AddSingleton<ICommandRunner, CommandRunner>();
             _serviceCollection.AddSingleton<IProcessService, ProcessService>();
+
+            _serviceCollection.AddSingleton(_defaultCliOptions);
 
             _internalServicesRegistered = true;
         }

@@ -14,6 +14,7 @@ public class ArgsParser : IArgsParser
     private readonly IStringConverter _stringConverter;
     private readonly IServiceProvider _serviceProvider;
     private readonly IStringEnumerableConverter _stringEnumerableConverter;
+    private readonly CliOptions _options;
 
     private readonly Regex _commandSurfaceRegex;
 
@@ -24,12 +25,18 @@ public class ArgsParser : IArgsParser
             { typeof(TextWriter), () => Console.Out },
         };
 
-    public ArgsParser(List<CommandSurface> commandSurfaces, IStringConverter stringConverter, IStringEnumerableConverter stringEnumerableConverter, IServiceProvider serviceProvider)
+    public ArgsParser(
+        List<CommandSurface> commandSurfaces, 
+        IStringConverter stringConverter, 
+        IStringEnumerableConverter stringEnumerableConverter, 
+        IServiceProvider serviceProvider,
+        CliOptions options)
     {
         _commandSurfaces = commandSurfaces;
         _stringConverter = stringConverter;
         _stringEnumerableConverter = stringEnumerableConverter;
         _serviceProvider = serviceProvider;
+        _options = options;
 
         var groupNames = _commandSurfaces.Select(cs => cs.Group?.Name)
             .Where(cs => cs is not null)
@@ -97,14 +104,8 @@ public class ArgsParser : IArgsParser
 
     public bool? ParsePresenceValue(ref string input, Type targetType, SurfaceAttribute surfaceAttribute = null)
     {
-        var allowedTrueValues = new string[] { "true", "yes", "y", "1" };
-        var allowedFalseValues = new string[] { "false", "no", "n", "0" };
-
-        var allowedBooleanValues = allowedTrueValues.Concat(allowedFalseValues);
-        var commandPrefixes = new string[] { "--", "-", "/" };
-
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+(?<Value>false|true|yes|no|y|n|1|0)? *|$)
-        var pattern = @$"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)})(?<Separator>[ :=]+(?<Value>{ToRegexPattern(allowedBooleanValues)})? *|$)";
+        var pattern = @$"(?<= |^) *(?<Prefix>{ToRegexPattern(_options.SwitchPrefixes)})(?<Name>{ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)})(?<Separator>[ :=]+(?<Value>{ToRegexPattern(_options.ConvertStringsToBool)})? *|$)";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
@@ -125,11 +126,9 @@ public class ArgsParser : IArgsParser
 
     public string ParseStringValue(ref string input, SurfaceAttribute surfaceAttribute)
     {
-        var commandPrefixes = new string[] { "--", "-", "/" };
-
         // TOOD: Use \k<Quote> backreference
         // (?<= |^) *(?<Prefix>--|-|\/)(?<Name>name)(?<Separator>[ :=]+)(?!--|-|\/)(?<Value>[^ "']+|"[^"]*"|'[^']*') *|$
-        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(commandPrefixes)})(?<Name>{ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)})(?<Separator>[ :=]+)(?!{ToRegexPattern(commandPrefixes)})(?<Value>[^ ""']+|""[^""]*""|'[^']*') *|$";
+        var pattern = $@"(?<= |^) *(?<Prefix>{ToRegexPattern(_options.SwitchPrefixes)})(?<Name>{ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)})(?<Separator>[ :=]+)(?!{ToRegexPattern(_options.SwitchPrefixes)})(?<Value>[^ ""']+|""[^""]*""|'[^']*') *|$";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
@@ -156,9 +155,7 @@ public class ArgsParser : IArgsParser
     // This is a cheeky work around to parse an input value, as regex has proven extremely difficult for this piece.
     public IEnumerable<string> ParseEnumerableValue(ref string input, SurfaceAttribute surfaceAttribute = null)
     {
-        var commandPrefixes = new string[] { "--", "-", "/" };
-
-        var pattern = @$"({ToRegexPattern(commandPrefixes)}){ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)}";
+        var pattern = @$"({ToRegexPattern(_options.SwitchPrefixes)}){ToRegexPattern(surfaceAttribute.Name, surfaceAttribute.Alias)}";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
         var match = regex.Match(input);
 
