@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
@@ -13,6 +12,7 @@ public class ArgsParser : IArgsParser
     private readonly List<CommandSurface> _commandSurfaces;
     private readonly IStringConverter _stringConverter;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IStringEnumerableConverter _stringEnumerableConverter;
 
     private readonly Regex _commandSurfaceRegex;
 
@@ -23,10 +23,11 @@ public class ArgsParser : IArgsParser
             { typeof(TextWriter), () => Console.Out },
         };
 
-    public ArgsParser(List<CommandSurface> commandSurfaces, IStringConverter stringConverter, IServiceProvider serviceProvider)
+    public ArgsParser(List<CommandSurface> commandSurfaces, IStringConverter stringConverter, IStringEnumerableConverter stringEnumerableConverter, IServiceProvider serviceProvider)
     {
         _commandSurfaces = commandSurfaces;
         _stringConverter = stringConverter;
+        _stringEnumerableConverter = stringEnumerableConverter;
         _serviceProvider = serviceProvider;
 
         var groupNames = _commandSurfaces.Select(cs => cs.Group?.Name)
@@ -151,7 +152,7 @@ public class ArgsParser : IArgsParser
     }
 
 
-    // This is a cheeky work around to parse an enumerable value, as regex has proven extremely difficult for this piece.
+    // This is a cheeky work around to parse an input value, as regex has proven extremely difficult for this piece.
     public IEnumerable<string> ParseEnumerableValue(ref string input, SurfaceAttribute surfaceAttribute = null)
     {
         var commandPrefixes = new string[] { "--", "-", "/" };
@@ -217,6 +218,8 @@ public class ArgsParser : IArgsParser
 
         //return default;
     }
+
+
     public object ParseTypedValue(ref string input, Type targetType, SurfaceAttribute surfaceAttribute = null)
     {
         if (_stringConverter.SupportsType(targetType))
@@ -234,46 +237,10 @@ public class ArgsParser : IArgsParser
                 return _stringConverter.Convert(targetType, stringValue);
         }
 
-        else if (targetType.IsAssignableTo(typeof(IEnumerable)))
+        else if (_stringEnumerableConverter.SupportsType(targetType))
         {
-            var underlyingType = targetType.GetElementType() ?? targetType.GetGenericArguments().Single();
-
-            if (_stringConverter.SupportsType(underlyingType))
-            {
-                var parsed = ParseEnumerableValue(ref input, surfaceAttribute);
-                if (parsed is null)
-                    return null;
-
-                var enumerable = parsed.Select(value => _stringConverter.Convert(underlyingType, value));
-
-                if (targetType.IsAssignableTo(typeof(Array)))
-                {
-                    var array = Array.CreateInstance(underlyingType, enumerable.Count());
-
-                    for (var i = 0; i < array.Length; i++)
-                        array.SetValue(enumerable.ElementAt(i), i);
-
-                    return array;
-                }
-                else
-                {
-                    var listType = typeof(IList<>).MakeGenericType(underlyingType);
-                    if (targetType.IsAssignableTo(listType))
-                    {
-                        var list = Activator.CreateInstance(targetType) as IList;
-                        foreach (var item in enumerable)
-                            list.Add(item);
-
-                        return list;
-                    }
-
-                    throw new NotImplementedException();
-                }
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
+            var parsed = ParseEnumerableValue(ref input, surfaceAttribute);
+            return _stringEnumerableConverter.Convert(parsed, targetType);
         }
         
         var instance = Activator.CreateInstance(targetType);
@@ -340,25 +307,44 @@ public class ArgsParser : IArgsParser
             response.Add(value);
         }
 
-        var remainingStrings = ParseRemainingStringValues(ref input);
+        var remainingStrings = ParseRemainingStringValues(ref input).ToList();
+        if (!remainingStrings.Any())
+            return response.ToArray();
 
-        var index = 0;
         for (var i = 0; i < response.Count; i++)
         {
             if (response[i] is not null)
                 continue;
 
-            var value = remainingStrings.ElementAtOrDefault(index);
+            var value = remainingStrings.FirstOrDefault();
             if (value is not null)
             {
                 try
                 {
                     response[i] = _stringConverter.Convert(parameters[i].ParameterType, value);
-                    index++;
+                    remainingStrings.RemoveAt(0);
                 }
                 catch (Exception) // If the value can not be converted, it was most likely not intended to be picked up in this position.
-                {
+                { }
+            }
+        }
 
+        if (!remainingStrings.Any())
+            return response.ToArray();
+
+        for (var i = 0; i < response.Count; i++)
+        {
+            var parameter = parameters[i];
+            var value = response[i];
+
+            if (value is null && _stringEnumerableConverter.SupportsType(parameter.ParameterType))
+            {
+                var underlyingType = _stringEnumerableConverter.GetUnderlyingType(parameter.ParameterType);
+
+                if (_stringConverter.SupportsType(underlyingType))
+                {
+                    response[i] = _stringEnumerableConverter.Convert(remainingStrings, parameter.ParameterType);
+                    break; // Do not allow the parser to bind more than one anonymous enumerable. 
                 }
             }
         }

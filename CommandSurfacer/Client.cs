@@ -65,6 +65,7 @@ public class Client
             _serviceCollection.AddSingleton(_commandSurfaces);
 
             _serviceCollection.AddSingleton<IStringConverter, StringConverter>();
+            _serviceCollection.AddSingleton<IStringEnumerableConverter, StringEnumerableConverter>();
             _serviceCollection.AddSingleton<IArgsParser, ArgsParser>();
             _serviceCollection.AddSingleton<ICommandRunner, CommandRunner>();
             _serviceCollection.AddSingleton<IProcessService, ProcessService>();

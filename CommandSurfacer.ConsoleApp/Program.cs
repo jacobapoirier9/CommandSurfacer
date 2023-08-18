@@ -10,7 +10,7 @@ internal static class Program
     {
         if (System.Diagnostics.Debugger.IsAttached)
         {
-            args = new string[] { "enter-test jake apple tom" };
+            args = new string[] { "enter-test --files .\\Sandbox\\TestFile.txt .\\Sandbox\\TestFile.txt --stop" };
         }
 
         var client = Client.Create()
@@ -51,11 +51,8 @@ public class AppCmdService
 public class TestService
 {
     [Surface("enter-test")]
-    public async Task EnterTestAsync(AppCmdService service, string[] items)
+    public async Task EnterTestAsync(AppCmdService service, FileInfo[] files)
     {
-        foreach (var item in items)
-            Console.WriteLine(item);
-
         var xml = await service.GetConfiguration("system.applicationHost/log");
 
         Console.WriteLine(xml);
