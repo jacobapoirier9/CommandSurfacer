@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace CommandSurfacer;
+namespace CommandSurfacer.Models;
 
 public class CommandSurface
 {
