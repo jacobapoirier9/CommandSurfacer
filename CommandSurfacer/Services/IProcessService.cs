@@ -5,8 +5,8 @@ namespace CommandSurfacer.Services;
 
 public interface IProcessService
 {
-    public Process GetParentProcess() => GetParentProcessAsync().GetAwaiter().GetResult();
-    public Task<Process> GetParentProcessAsync();
+    public Process GetParentProcess(int? processId = null) => GetParentProcessAsync(processId).GetAwaiter().GetResult();
+    public Task<Process> GetParentProcessAsync(int? processId = null);
 
 
     public CompletedProcess Run(string exeFileName, string arguments) => RunAsync(exeFileName, arguments).GetAwaiter().GetResult();

@@ -12,9 +12,9 @@ public class ProcessService : IProcessService
         _stringConverter = stringConverter;
     }
 
-    public async Task<Process> GetParentProcessAsync()
+    public async Task<Process> GetParentProcessAsync(int? processId = null)
     {
-        var process = Process.GetCurrentProcess();
+        var process = processId.HasValue ? Process.GetProcessById(processId.Value) : Process.GetCurrentProcess();
         var encodedCommand = Utils.PowerShellEncodeCommand($"Get-CimInstance Win32_Process -Filter \"ProcessId = '{process.Id}'\" | select ParentProcessId -ExpandProperty ParentProcessId");
 
         var completed = await RunAsync("powershell.exe", encodedCommand);
