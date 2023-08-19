@@ -15,7 +15,9 @@ public class ProcessService : IProcessService
     public async Task<Process> GetParentProcessAsync()
     {
         var process = Process.GetCurrentProcess();
-        var completed = await RunAsync("powershell.exe", Utils.PowerShellEncodeCommand($"{{ Get-CimInstance Win32_Process -Filter \"ProcessId = '{process.Id}'\" | select ParentProcessId }}"));
+        var encodedCommand = Utils.PowerShellEncodeCommand($"Get-CimInstance Win32_Process -Filter \"ProcessId = '{process.Id}'\" | select ParentProcessId -ExpandProperty ParentProcessId");
+
+        var completed = await RunAsync("powershell.exe", encodedCommand);
 
         var parentProcessId = _stringConverter.Convert<int>(completed.StandardOutputString);
 

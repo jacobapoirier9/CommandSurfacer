@@ -33,22 +33,22 @@ public class Client
         _serviceCollection.TryAddSingleton<IResponseProvider, ConsoleResponseProvider>();
         _serviceCollection.TryAddSingleton<IInteractiveConsole, InteractiveConsole>();
 
-        var options = new InteractiveConsoleOptions
-        {
-            Banner = null,
-            Prompt = " >> ",
-            PromptFunc = null,
-            OnError = null,
-            OnErrorCommand = "help"
-        };
-
         if (configure is not null)
-            configure(options);
+            configure(_defaultInteractiveConsoleOptions);
 
-        _serviceCollection.TryAddSingleton(options);
+        _serviceCollection.TryAddSingleton(_defaultInteractiveConsoleOptions);
 
         return this;
     }
+
+    private readonly InteractiveConsoleOptions _defaultInteractiveConsoleOptions = new InteractiveConsoleOptions
+    {
+        Banner = null,
+        Prompt = " >> ",
+        PromptFunc = null,
+        OnError = null,
+        OnErrorCommand = "help"
+    };
 
     private readonly CliOptions _defaultCliOptions = new CliOptions
     {

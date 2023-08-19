@@ -1,5 +1,9 @@
 ﻿using CommandSurfacer.Services;
 using Microsoft.Extensions.DependencyInjection;
+using System.Security.Cryptography;
+using System.Text;
+using System.Xml;
+using System.Xml.XPath;
 
 namespace CommandSurfacer.ConsoleApp;
 
@@ -10,7 +14,7 @@ internal static class Program
     {
         if (System.Diagnostics.Debugger.IsAttached)
         {
-            args = new string[] { "enter-test --files .\\Sandbox\\TestFile.txt .\\Sandbox\\TestFile.txt --stop" };
+            args = new string[] { "enter-test" };
         }
 
         var client = Client.Create()
@@ -29,32 +33,11 @@ internal static class Program
     }
 }
 
-public class AppCmdService
-{
-    private static string _appCmd = @$"{Environment.GetEnvironmentVariable("WinDir")}\System32\inetsrv\appcmd.exe";
-
-    private readonly IProcessService _processService;
-    public AppCmdService(IProcessService processService)
-    {
-        _processService = processService;
-    }
-
-    public async Task<string> GetConfiguration(string configSection)
-    {
-        var command = string.Format("list config -section:{0}", configSection);
-        var result = await _processService.RunAsync(_appCmd, command);
-
-        return result.StandardOutputString;
-    }
-}
-
 public class TestService
 {
     [Surface("enter-test")]
-    public async Task EnterTestAsync(AppCmdService service, FileInfo[] files)
+    public async Task EnterTestAsync(IProcessService service)
     {
-        var xml = await service.GetConfiguration("system.applicationHost/log");
-
-        Console.WriteLine(xml);
+        var parentProcess = await service.GetParentProcessAsync();
     }
 }
