@@ -6,7 +6,26 @@ namespace CommandSurfacer.Services;
 
 public class ProcessService : IProcessService
 {
-    public RunProcessResponse RunProcess(string exeFileName, string arguments)
+    private readonly IStringConverter _stringConverter;
+    public ProcessService(IStringConverter stringConverter)
+    {
+        _stringConverter = stringConverter;
+    }
+
+    public async Task<Process> GetParentProcessAsync(int? processId = null)
+    {
+        var process = processId.HasValue ? Process.GetProcessById(processId.Value) : Process.GetCurrentProcess();
+        var encodedCommand = Utils.PowerShellEncodeCommand($"Get-CimInstance Win32_Process -Filter \"ProcessId = '{process.Id}'\" | select ParentProcessId -ExpandProperty ParentProcessId");
+
+        var completed = await RunAsync("powershell.exe", encodedCommand);
+
+        var parentProcessId = _stringConverter.Convert<int>(completed.StandardOutputString);
+
+        var parentProcess = Process.GetProcessById(parentProcessId);
+        return parentProcess;
+    }
+
+    public async Task<CompletedProcess> RunAsync(string exeFileName, string arguments)
     {
         var process = Process.Start(new ProcessStartInfo
         {
@@ -30,26 +49,18 @@ public class ProcessService : IProcessService
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
-        process.WaitForExit();
+        await process.WaitForExitAsync();
 
-        var standardOutput = outputBuilder.ToString();
-        var standardError = errorBuilder.ToString();
-
-        var result = new RunProcessResponse
+        var completedProcess = new CompletedProcess
         {
             ExitCode = process.ExitCode,
-            StandardOutput = standardOutput.Any() ? standardOutput : null,
-            StandardError = standardOutput.Any() ? standardError : null
+            StandardOutputString = outputBuilder.ToString(),
+            StandardErrorString = errorBuilder.ToString(),
         };
 
-        if (result.ExitCode > 0)
-            throw new InvalidProgramException($"Process finished with exit code {result.ExitCode}: {result.StandardError + result.StandardOutput}");
+        if (process.ExitCode > 0)
+            throw new InvalidProgramException($"Process finished with exit code {completedProcess.ExitCode}: {completedProcess.StandardErrorString + completedProcess.StandardOutputString}");
 
-        return result;
-    }
-
-    public async Task RunProcessAsync(string exeFileName, string arguments)
-    {
-        await new Task(() => RunProcess(exeFileName, arguments));
+        return completedProcess;
     }
 }

@@ -1,21 +1,22 @@
-﻿namespace CommandSurfacer.Services;
+﻿using CommandSurfacer.Models;
+
+namespace CommandSurfacer.Services;
 
 public class StringConverter : IStringConverter
 {
     private readonly Dictionary<Type, Func<string, object>> _converters;
+    private readonly CliOptions _options;
 
-    public StringConverter()
+    public StringConverter(CliOptions options)
     {
-        var allowedTrueValues = new string[] { "true", "yes", "y", "1" };
-        var allowedFalseValues = new string[] { "false", "no", "n", "0" };
-
+        _options = options;
         _converters = new Dictionary<Type, Func<string, object>>()
         {
             {   typeof(bool), (input) =>
                 {
-                    if (allowedTrueValues.Contains(input, StringComparer.OrdinalIgnoreCase))
+                    if (_options.ConvertStringsToTrue.Contains(input, StringComparer.OrdinalIgnoreCase))
                         return true;
-                    else if (allowedFalseValues.Contains(input, StringComparer.OrdinalIgnoreCase))
+                    else if (_options.ConvertStringsToFalse.Contains(input, StringComparer.OrdinalIgnoreCase))
                         return false;
 
                     return Activator.CreateInstance<bool>();
@@ -24,9 +25,9 @@ public class StringConverter : IStringConverter
             {
                 typeof(bool?), (input) =>
                 {
-                    if (allowedTrueValues.Contains(input, StringComparer.OrdinalIgnoreCase))
+                    if (_options.ConvertStringsToTrue.Contains(input, StringComparer.OrdinalIgnoreCase))
                         return true;
-                    else if (allowedFalseValues.Contains(input, StringComparer.OrdinalIgnoreCase))
+                    else if (_options.ConvertStringsToFalse.Contains(input, StringComparer.OrdinalIgnoreCase))
                         return false;
 
                     return Activator.CreateInstance<bool?>();

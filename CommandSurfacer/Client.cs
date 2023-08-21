@@ -33,20 +33,33 @@ public class Client
         _serviceCollection.TryAddSingleton<IResponseProvider, ConsoleResponseProvider>();
         _serviceCollection.TryAddSingleton<IInteractiveConsole, InteractiveConsole>();
 
-        var options = new InteractiveConsoleOptions
-        {
-            Banner = null,
-            Prompt = " >> ",
-            PromptFunc = null,
-            OnError = null,
-            OnErrorCommand = "help"
-        };
-
         if (configure is not null)
-            configure(options);
+            configure(_defaultInteractiveConsoleOptions);
 
-        _serviceCollection.TryAddSingleton(options);
+        _serviceCollection.TryAddSingleton(_defaultInteractiveConsoleOptions);
 
+        return this;
+    }
+
+    private readonly InteractiveConsoleOptions _defaultInteractiveConsoleOptions = new InteractiveConsoleOptions
+    {
+        Banner = null,
+        Prompt = " >> ",
+        PromptFunc = null,
+        OnError = null,
+        OnErrorCommand = "help"
+    };
+
+    private readonly CliOptions _defaultCliOptions = new CliOptions
+    {
+        SwitchPrefixes = new List<string> { "--", "-", "/" },
+        ConvertStringsToTrue = new List<string> { "true", "yes", "y", "1" },
+        ConvertStringsToFalse = new List<string> { "false", "no", "n", "0" },
+    };
+
+    public Client Configure(Action<CliOptions> configure)
+    {
+        configure(_defaultCliOptions);
         return this;
     }
 
@@ -65,9 +78,12 @@ public class Client
             _serviceCollection.AddSingleton(_commandSurfaces);
 
             _serviceCollection.AddSingleton<IStringConverter, StringConverter>();
+            _serviceCollection.AddSingleton<IStringEnumerableConverter, StringEnumerableConverter>();
             _serviceCollection.AddSingleton<IArgsParser, ArgsParser>();
             _serviceCollection.AddSingleton<ICommandRunner, CommandRunner>();
             _serviceCollection.AddSingleton<IProcessService, ProcessService>();
+
+            _serviceCollection.AddSingleton(_defaultCliOptions);
 
             _internalServicesRegistered = true;
         }

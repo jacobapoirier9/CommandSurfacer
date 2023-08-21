@@ -784,6 +784,82 @@ public class ArgsParserTests : BaseTests
 
         public void MethodThree(string name, int age, string anonymous1, string anonymous3) { }
     }
+
+    [Fact]
+    public void ParseMethodParameters_AllowsNamedEnumerable()
+    {
+        var input = "--files .\\Sandbox\\TestFile.txt .\\Sandbox\\TestFile.txt --stop";
+        var output = _argsParser.ParseMethodParameters(ref input, typeof(GetMethodParameters_Enumerable).GetMethod(nameof(GetMethodParameters_Enumerable.MethodOne)));
+
+        Assert.Collection(output,
+            param =>
+            {
+                var value = Assert.IsType<List<FileInfo>>(param);
+
+                Assert.Collection(value,
+                    file =>
+                    {
+                        Assert.Equal("TestFile.txt", file.Name);
+                        Assert.True(file.Exists);
+                    },
+                    file =>
+                    {
+                        Assert.Equal("TestFile.txt", file.Name);
+                        Assert.True(file.Exists);
+                    });
+            },
+            param =>
+            {
+                var value = Assert.IsType<List<FileInfo>>(param);
+
+                Assert.Collection(value,
+                    file =>
+                    {
+                        Assert.Equal("--stop", file.Name);
+                        Assert.False(file.Exists);
+                    });
+            });
+
+        Assert.Empty(input);
+    }
+
+    [Fact]
+    public void ParseMethodParameters_AllowsAnonymousEnumerable()
+    {
+        var input = ".\\Sandbox\\TestFile.txt .\\Sandbox\\TestFile.txt --stop";
+        var output = _argsParser.ParseMethodParameters(ref input, typeof(GetMethodParameters_Enumerable).GetMethod(nameof(GetMethodParameters_Enumerable.MethodOne)));
+
+        Assert.Collection(output,
+            param =>
+            {
+                var value = Assert.IsType<List<FileInfo>>(param);
+
+                Assert.Collection(value,
+                    file =>
+                    {
+                        Assert.Equal("TestFile.txt", file.Name);
+                        Assert.True(file.Exists);
+                    },
+                    file =>
+                    {
+                        Assert.Equal("TestFile.txt", file.Name);
+                        Assert.True(file.Exists);
+                    },
+                    file =>
+                    {
+                        Assert.Equal("--stop", file.Name);
+                        Assert.False(file.Exists);
+                    });
+            },
+            param => Assert.Null(param));
+
+        Assert.Empty(input);
+    }
+
+    public class GetMethodParameters_Enumerable
+    {
+        public void MethodOne(List<FileInfo> files, List<FileInfo> second) { }
+    }
     #endregion
 
     #region Parse Enumerable Value

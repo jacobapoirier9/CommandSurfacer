@@ -1,4 +1,5 @@
-﻿using CommandSurfacer.Services;
+﻿using CommandSurfacer.Models;
+using CommandSurfacer.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Reflection;
@@ -77,9 +78,16 @@ public class CommandSurfacerTestFixture : IDisposable
                 services.AddSingleton<SampleServiceThree>();
 
                 services.AddSingleton<IStringConverter, StringConverter>();
+                services.AddSingleton<IStringEnumerableConverter, StringEnumerableConverter>();
                 services.AddSingleton<IArgsParser, ArgsParser>();
-                //services.AddSingleton<IBetterArgsParser, BetterArgsParser>();
                 services.AddSingleton<ICommandRunner, CommandRunner>();
+
+                services.AddSingleton(new CliOptions
+                {
+                    SwitchPrefixes = new List<string> { "--", "-", "/" },
+                    ConvertStringsToTrue = new List<string> { "true", "yes", "y", "1" },
+                    ConvertStringsToFalse = new List<string> { "false", "no", "n", "0" },
+                });
 
                 services.AddSingleton<InjectedService>();
             })

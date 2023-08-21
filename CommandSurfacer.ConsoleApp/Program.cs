@@ -1,12 +1,9 @@
-﻿using CommandSurfacer.Models;
-using CommandSurfacer.Services;
+﻿using CommandSurfacer.Services;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
-using static CommandSurfacer.ConsoleApp.Testing;
+using System.Xml;
+using System.Xml.XPath;
 
 namespace CommandSurfacer.ConsoleApp;
 
@@ -16,7 +13,9 @@ internal static class Program
     private static async Task MainAsync(string[] args)
     {
         if (System.Diagnostics.Debugger.IsAttached)
-            args = new string[] { "test --names Jake, JJ, Kam --notused" };
+        {
+            args = new string[] { "enter-test" };
+        }
 
         var client = Client.Create()
             .AddInteractiveConsole(options =>
@@ -27,36 +26,18 @@ internal static class Program
             .AddServices(services =>
             {
                 services.AddSingleton<TestService>();
-                services.AddSingleton<Test2Service>();
+                services.AddSingleton<AppCmdService>();
             });
 
         await client.RunAsync(args);
     }
 }
 
-[Group("test-group")]
 public class TestService
 {
-    [Surface("test")]
-    public void Test(List<string> names)
+    [Surface("enter-test")]
+    public async Task EnterTestAsync(IProcessService service)
     {
-        foreach (var name in names)
-            Console.WriteLine(names);
+        var parentProcess = await service.GetParentProcessAsync();
     }
 }
-
-[Group("test-2-group", HelpText = "This is how you do it")]
-public class Test2Service
-{
-    [Surface("test2")]
-    public void Test()
-    {
-
-    }
-}
-
-/*
- * 
-        var currentProcess = Process.GetCurrentProcess();
-        var output = processService.RunProcess("powershell.exe", $"-Command {{ Get-CimInstance Win32_Process -Filter \"ProcessId = '{currentProcess.Id}'\" | select ParentProcessId }}");
- */
