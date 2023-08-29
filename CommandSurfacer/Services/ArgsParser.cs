@@ -217,7 +217,6 @@ public class ArgsParser : IArgsParser
         //return default;
     }
 
-
     public object ParseTypedValue(ref string input, Type targetType, SurfaceAttribute surfaceAttribute = null)
     {
         if (_stringConverter.SupportsType(targetType))
@@ -240,9 +239,19 @@ public class ArgsParser : IArgsParser
             var parsed = ParseEnumerableValue(ref input, surfaceAttribute);
             return _stringEnumerableConverter.Convert(parsed, targetType);
         }
-        
+                
         var instance = Activator.CreateInstance(targetType);
-        var properties = targetType.GetProperties();
+        BindArgs(ref input, instance, targetType);
+
+        return instance;
+    }
+
+    private object BindArgs(ref string input, object instance, Type targetType)
+    {
+        var properties = targetType.GetProperties()
+            .Where(property => property.DeclaringType.Namespace == targetType.Namespace)
+            .ToList();
+
         foreach (var property in properties)
         {
             var attribute = property.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(property.Name);
@@ -287,7 +296,12 @@ public class ArgsParser : IArgsParser
             else
             {
                 var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(parameter.Name);
-                value = GetSpecialValue(parameter.ParameterType) ?? ParseTypedValue(ref input, parameter.ParameterType, surfaceAttribute);
+
+                value = GetSpecialValue(parameter.ParameterType);
+                if (value is not null)
+                    BindArgs(ref input, value, parameter.ParameterType);
+                else
+                    value = ParseTypedValue(ref input, parameter.ParameterType, surfaceAttribute);
 
                 // If ParseTypedValue returns the default value, we do not want to add it to response.
                 // This will allow anonymous parameters to be inserted more accurately.

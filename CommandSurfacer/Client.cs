@@ -126,9 +126,9 @@ public class Client
         }
     }
 
-    public Client Run(string[] args, params object[] additionalParameters) => Run<Client>(string.Join(' ', args), additionalParameters);
+    public object Run(string[] args, params object[] additionalParameters) => Run<object>(string.Join(' ', args), additionalParameters);
     public T Run<T>(string[] args, params object[] additionalParameters) => Run<T>(string.Join(' ', args), additionalParameters);
-    public Client Run(string input, params object[] additionalParameters) => Run<Client>(input, additionalParameters);
+    public object Run(string input, params object[] additionalParameters) => Run<object>(input, additionalParameters);
     public T Run<T>(string input, params object[] additionalParameters) => RunFinalAsync<T>(input, additionalParameters).GetAwaiter().GetResult();
 
     public async Task<object> RunAsync(string[] args, params object[] additionalParameters) => await RunAsync<object>(string.Join(' ', args), additionalParameters);
