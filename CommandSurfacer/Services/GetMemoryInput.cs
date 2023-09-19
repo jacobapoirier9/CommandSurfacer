@@ -1,14 +1,14 @@
 ﻿namespace CommandSurfacer.Services;
 
-public class MemoryResponseProvider : IResponseProvider
+public class GetMemoryInput : IGetInput
 {
     private readonly IEnumerator<object> _enumerator;
-    public MemoryResponseProvider(params object[] responses) { _enumerator = (responses as IEnumerable<object>).GetEnumerator(); }
+    public GetMemoryInput(params object[] responses) { _enumerator = (responses as IEnumerable<object>).GetEnumerator(); }
 
 
-    public T GetResponse<T>(string prompt) => (T)GetResponse(prompt, typeof(T));
+    public T GetInput<T>(string prompt) => (T)GetInput(prompt, typeof(T));
 
-    public object GetResponse(string prompt, Type targetType)
+    public object GetInput(string prompt, Type targetType)
     {
         if (_enumerator.MoveNext())
         {
@@ -24,5 +24,5 @@ public class MemoryResponseProvider : IResponseProvider
             throw new IndexOutOfRangeException("Not enough elements provided to continue reading inputs");
     }
 
-    public string GetResponse(string prompt) => (string)GetResponse(prompt, typeof(string));
+    public string GetInput(string prompt) => (string)GetInput(prompt, typeof(string));
 }

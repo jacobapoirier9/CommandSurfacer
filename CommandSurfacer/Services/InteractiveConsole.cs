@@ -8,15 +8,15 @@ public class InteractiveConsole : IInteractiveConsole
     public const string EnterInteractiveConsoleCommand = "enter-interactive";
 
     private readonly ICommandRunner _commandRunner;
-    private readonly IResponseProvider _responseProvider;
+    private readonly IGetInput _getInput;
     private readonly InteractiveConsoleOptions _options;
 
     private bool _continue;
 
-    public InteractiveConsole(ICommandRunner commandRunner, IResponseProvider responseProvider, IServiceProvider serviceProvider)
+    public InteractiveConsole(ICommandRunner commandRunner, IGetInput getInput, IServiceProvider serviceProvider)
     {
         _commandRunner = commandRunner;
-        _responseProvider = responseProvider;
+        _getInput = getInput;
         _options = serviceProvider.GetService<InteractiveConsoleOptions>();
 
         _continue = true;
@@ -32,7 +32,7 @@ public class InteractiveConsole : IInteractiveConsole
         while (_continue)
         {
             var prompt = _options.Prompt ?? _options.PromptFunc?.Invoke();
-            var line = _responseProvider.GetResponse(prompt);
+            var line = _getInput.GetInput(prompt);
 
             try
             {

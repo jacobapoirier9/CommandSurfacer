@@ -30,7 +30,7 @@ public class Client
 
     public Client AddInteractiveConsole(Action<InteractiveConsoleOptions> configure = null)
     {
-        _serviceCollection.TryAddSingleton<IResponseProvider, ConsoleResponseProvider>();
+        _serviceCollection.TryAddSingleton<IGetInput, GetConsoleInput>();
         _serviceCollection.TryAddSingleton<IInteractiveConsole, InteractiveConsole>();
 
         if (configure is not null)
