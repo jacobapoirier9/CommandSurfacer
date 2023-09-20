@@ -15,7 +15,7 @@ internal static class Program
         if (System.Diagnostics.Debugger.IsAttached)
         {
             args = new string[] { "enter-test --name 'Jake'" };
-            args = new string[] { };
+            args = new string[] { "enter-test 'Jake' 'Hello'"};
         }
 
         var client = Client.Create()
@@ -36,11 +36,17 @@ internal static class Program
 
 public class TestService
 {
-    public string Name { get; set; }
 
     [Surface("enter-test")]
-    public async Task EnterTestAsync(IProcessService service, TestService request)
+    public async Task EnterTestAsync(string[] names, TextWriter writer)
+    {
+
+    }
+
+
+    public async Task GetParentProcess(IProcessService service)
     {
         var parentProcess = await service.GetParentProcessAsync();
     }
 }
+

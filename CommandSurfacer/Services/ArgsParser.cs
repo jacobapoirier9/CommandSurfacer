@@ -239,11 +239,26 @@ public class ArgsParser : IArgsParser
             var parsed = ParseEnumerableValue(ref input, surfaceAttribute);
             return _stringEnumerableConverter.Convert(parsed, targetType);
         }
-                
-        var instance = Activator.CreateInstance(targetType);
-        BindArgs(ref input, instance, targetType);
 
-        return instance;
+        else if (_getSpecialValues.TryGetValue(targetType, out var getSpecialValue))
+        {
+            var specialValue = getSpecialValue();
+            return specialValue;
+        }
+
+        var special = _serviceProvider.GetService(targetType);
+        if (special is not null)
+        {
+            BindArgs(ref input, special, targetType);
+            return special;
+        }
+        else
+        {
+            var instance = Activator.CreateInstance(targetType);
+            BindArgs(ref input, instance, targetType);
+
+            return instance;
+        }
     }
 
     private object BindArgs(ref string input, object instance, Type targetType)
@@ -269,11 +284,8 @@ public class ArgsParser : IArgsParser
             var specialValue = getSpecialValue();
             return specialValue;
         }
-        else
-        {
-            var injectedService = _serviceProvider.GetService(targetType);
-            return injectedService;
-        }
+
+        return default;
     }
 
     public object[] ParseMethodParameters(ref string input, MethodInfo method, params object[] additionalParameters)
@@ -297,9 +309,11 @@ public class ArgsParser : IArgsParser
             {
                 var surfaceAttribute = parameter.GetCustomAttribute<SurfaceAttribute>() ?? new SurfaceAttribute(parameter.Name);
 
-                value = GetSpecialValue(parameter.ParameterType);
+                value = _serviceProvider.GetService(parameter.ParameterType);
                 if (value is not null)
                     BindArgs(ref input, value, parameter.ParameterType);
+                else if (_getSpecialValues.TryGetValue(parameter.ParameterType, out var getSpecialValue))
+                    value = getSpecialValue();
                 else
                     value = ParseTypedValue(ref input, parameter.ParameterType, surfaceAttribute);
 
