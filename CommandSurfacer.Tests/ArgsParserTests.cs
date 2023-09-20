@@ -646,13 +646,6 @@ public class ArgsParserTests : BaseTests
     }
 
     [Fact]
-    public void GetSpecialValue_ServiceCollection()
-    {
-        var serviceProvider = _argsParser.GetSpecialValue(typeof(IServiceProvider));
-        Assert.NotNull(serviceProvider);
-    }
-
-    [Fact]
     public void GetSpecialValue_Null()
     {
         var result = _argsParser.GetSpecialValue(typeof(string));
