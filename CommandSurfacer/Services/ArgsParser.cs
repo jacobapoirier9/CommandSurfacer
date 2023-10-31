@@ -97,8 +97,15 @@ public class ArgsParser : IArgsParser
         var results = filtered.ToList();
 
         if (results.Count != 1)
-            throw new ApplicationException($"Found {results.Count} out of {_commandSurfaces.Count} surfaces to execute.");
+        {
+            if (results.Any())
+            {
+                var message = string.Join(", ", results.Select(r => r.Surface?.Name ?? r.Method.Name));
+                throw new ApplicationException($"Could not find a single matching surface ({message})");
+            }
 
+            throw new ApplicationException("Could not find a matching surface");
+        }
         return results.First();
     }
 
